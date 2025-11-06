@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>我的订单 - Shopee Clone</title>
+<style>
+body { font-family: Arial, sans-serif; background:#fafafa; margin:0; padding:0; }
+header { background:#f53d2d; color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; }
+header h1 { margin:0; }
+.orders { padding:20px; }
+.order { background:white; margin-bottom:15px; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+.order h3 { margin:0 0 10px 0; }
+.order table { width:100%; border-collapse: collapse; margin-top:10px; }
+.order table th, .order table td { border:1px solid #ddd; padding:8px; text-align:left; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>我的订单 🧾</h1>
+  <div><a href="index.html" style="color:white;">返回首页</a></div>
+</header>
+
+<div class="orders" id="ordersContainer"></div>
+
+<script>
+let currentUser = JSON.parse(localStorage.getItem("user"));
+if(!currentUser){
+  alert("请先登录！");
+  window.location.href="login.html";
+}
+
+// 安全 fetch
+async function safeFetch(url, options){
+  try{
+    const res = await fetch(url, options);
+    const text = await res.text();
+    try { return JSON.parse(text); } 
+    catch { alert("返回错误: "+text); return null; }
+  } catch(err){ alert("网络错误: "+err.message); return null; }
+}
+
+// 加载订单
+async function loadOrders(){
+  const data = await safeFetch(`api.php?action=my_orders&user_id=${currentUser.id}`);
+  if(!data) return;
+  const container = document.getElementById('ordersContainer');
+  container.innerHTML = '';
+  data.forEach(order=>{
+    let itemsHtml = '<table><tr><th>商品</th><th>价格</th><th>数量</th></tr>';
+    order.items.forEach(i=>{
+      itemsHtml += `<tr><td>${i.name}</td><td>RM ${i.price}</td><td>${i.quantity}</td></tr>`;
+    });
+    itemsHtml += '</table>';
+    container.innerHTML += `
+      <div class="order">
+        <h3>订单ID: ${order.order_id} | 总价: RM ${order.total_price} | 下单时间: ${order.created_at}</h3>
+        <p>收件人: ${order.recipient_name} | 地址: ${order.recipient_address}</p>
+        ${itemsHtml}
+      </div>`;
+  });
+}
+
+loadOrders();
+</script>
+
+</body>
+</html>

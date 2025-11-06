@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Shopee Clone 🛍️</title>
+<style>
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #fafafa; margin:0; }
+header { background: #f53d2d; color: white; display:flex; justify-content:space-between; align-items:center; padding:15px 20px; }
+header h1 { margin:0; font-size:22px; }
+header .user { font-size:16px; }
+.search-bar { background:white; display:flex; justify-content:center; padding:10px; }
+.search-bar input { width:50%; padding:10px; border:1px solid #ddd; border-radius:6px 0 0 6px; }
+.search-bar button { border:none; background:#f53d2d; color:white; padding:10px 20px; border-radius:0 6px 6px 0; cursor:pointer; }
+.categories { display:flex; justify-content:center; background:#fff; padding:10px 0; border-bottom:1px solid #eee; }
+.categories button { background:none; border:none; padding:10px 15px; margin:0 5px; cursor:pointer; border-radius:5px; transition:0.2s; }
+.categories button:hover { background:#fcebea; }
+.products { display:flex; flex-wrap:wrap; justify-content:center; padding:20px; }
+.card { background:white; width:200px; margin:10px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); overflow:hidden; text-align:center; transition:transform 0.2s; }
+.card:hover { transform:scale(1.03); }
+.card img { width:100%; height:160px; object-fit:cover; }
+.card button { background:#f53d2d; color:white; border:none; padding:10px; width:100%; cursor:pointer; }
+.cart { position:fixed; bottom:20px; right:20px; background:#f53d2d; color:white; padding:15px 25px; border-radius:8px; cursor:pointer; box-shadow:0 4px 8px rgba(0,0,0,0.2); }
+.checkout-form { position:fixed; bottom:80px; right:20px; background:white; padding:15px; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.2); display:none; width:300px; }
+.checkout-form input { width:100%; padding:8px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px; }
+.checkout-form button { background:#f53d2d; color:white; border:none; padding:10px; width:100%; cursor:pointer; border-radius:4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Shopee Clone 🛒</h1>
+  <div class="user" id="userDisplay">未登录</div>
+</header>
+
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="搜索商品...">
+  <button onclick="searchProducts()">🔍 搜索</button>
+</div>
+
+<div class="categories">
+  <button onclick="filterCategory('')">全部</button>
+  <button onclick="filterCategory('电子产品')">电子产品</button>
+  <button onclick="filterCategory('配件')">配件</button>
+  <button onclick="filterCategory('生活用品')">生活用品</button>
+</div>
+
+<div class="products" id="productContainer"></div>
+
+<div class="cart" onclick="toggleCheckoutForm()">🛒 结账 (<span id="count">0</span>)</div>
+
+<div class="checkout-form" id="checkoutForm">
+  <h3>填写收件信息</h3>
+  <input type="text" id="recipientName" placeholder="收件人姓名">
+  <input type="text" id="recipientAddress" placeholder="收货地址">
+  <button onclick="checkout()">确认下单</button>
+</div>
+
+<script>
+let cart = [];
+let currentUser = JSON.parse(localStorage.getItem("user")) || null;
+let currentCategory = '';
+let currentKeyword = '';
+
+function showUser() {
+  const userDiv = document.getElementById('userDisplay');
+  if(currentUser) {
+    userDiv.innerHTML = `欢迎回来，<b>${currentUser.username}</b>`;
+  } else {
+    userDiv.innerHTML = `<a href="login.html" style="color:white;">登录 / 注册</a>`;
+  }
+}
+
+async function safeFetch(url, options) {
+  try {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    try { return JSON.parse(text); } 
+    catch { alert("服务器返回错误或非 JSON 数据"); return null; }
+  } catch(err) { alert("网络请求失败: " + err.message); return null; }
+}
+
+async function loadProducts() {
+  const data = await safeFetch(`api.php?category=${encodeURIComponent(currentCategory)}&search=${encodeURIComponent(currentKeyword)}`);
+  if(!data) return;
+  const container = document.getElementById('productContainer');
+  container.innerHTML = '';
+  data.forEach(p=>{
+    container.innerHTML += `
+      <div class="card">
+        <img src="${p.image}" alt="${p.name}">
+        <h3>${p.name}</h3>
+        <p>RM ${p.price}</p>
+        <button onclick='addToCart(${JSON.stringify(p)})'>加入购物车</button>
+      </div>`;
+  });
+}
+
+function addToCart(p) {
+  const found = cart.find(i=>i.id===p.id);
+  if(found) found.quantity++;
+  else cart.push({...p, quantity:1});
+  document.getElementById('count').innerText = cart.reduce((a,b)=>a+b.quantity,0);
+}
+
+function toggleCheckoutForm() {
+  const form = document.getElementById('checkoutForm');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function checkout() {
+  if(!currentUser) return alert("请先登录！");
+  if(cart.length===0) return alert("购物车为空！");
+  const recipient_name = document.getElementById('recipientName').value.trim();
+  const recipient_address = document.getElementById('recipientAddress').value.trim();
+  if(!recipient_name || !recipient_address) return alert("请填写收件人姓名和地址！");
+
+  const itemsToSend = cart.map(p => ({
+    id: p.id,
+    price: p.price,
+    quantity: p.quantity
+  }));
+
+  const msg = await safeFetch("api.php", {
+    method: "POST",
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: "create_order",
+      user_id: currentUser.id,
+      items: itemsToSend,
+      recipient_name,
+      recipient_address
+    })
+  });
+
+  if(!msg) return;
+  if(msg.status === "ok") {
+    alert("订单创建成功！");
+    cart = [];
+    document.getElementById('count').innerText = 0;
+    document.getElementById('checkoutForm').style.display = 'none';
+    document.getElementById('recipientName').value = '';
+    document.getElementById('recipientAddress').value = '';
+    window.location.href = "orders.html";
+  } else {
+    alert("下单失败：" + msg.message);
+  }
+}
+
+function searchProducts() {
+  currentKeyword = document.getElementById('searchInput').value;
+  loadProducts();
+}
+
+function filterCategory(cat) {
+  currentCategory = cat;
+  loadProducts();
+}
+
+showUser();
+loadProducts();
+</script>
+
+</body>
+</html>

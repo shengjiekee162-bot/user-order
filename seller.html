@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>卖家后台 - 上传商品</title>
+<style>
+body { font-family: Arial; background:#f7f7f7; padding:40px; }
+input,select,textarea { display:block; margin:10px 0; width:300px; padding:8px; }
+button { background:#f53d2d; color:white; border:none; padding:10px; width:150px; cursor:pointer; }
+</style>
+</head>
+<body>
+<h2>📦 上传新商品</h2>
+<form id="productForm">
+  <input type="text" id="name" placeholder="商品名称" required>
+  <input type="number" step="0.01" id="price" placeholder="价格" required>
+  <select id="category">
+    <option value="1">电子产品</option>
+    <option value="2">配件</option>
+    <option value="3">生活用品</option>
+  </select>
+  <textarea id="desc" placeholder="商品描述"></textarea>
+  <input type="text" id="image" placeholder="图片路径，如 images/xxx.jpg">
+  <input type="number" id="seller" placeholder="卖家ID">
+  <button type="submit">上传商品</button>
+</form>
+
+<script>
+document.getElementById("productForm").onsubmit = async e=>{
+  e.preventDefault();
+  const data = {
+    name: name.value,
+    price: price.value,
+    category_id: category.value,
+    description: desc.value,
+    image: image.value,
+    seller_id: seller.value
+  };
+  const res = await fetch("upload.php",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  const msg = await res.json();
+  alert(msg.message);
+};
+</script>
+</body>
+</html>
