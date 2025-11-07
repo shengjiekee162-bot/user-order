@@ -28,6 +28,16 @@ header .user { font-size:14px; }
 .order-card h4 { margin:0 0 10px 0; color:#f53d2d; }
 .order-card .items { white-space:pre-line; margin:10px 0; padding:10px; background:#f8f8f8; border-radius:4px; }
 .order-card .meta { color:#666; font-size:0.9em; }
+.payment-methods { margin:15px 0; }
+.payment-option { border:1px solid #ddd; margin-bottom:10px; padding:10px; border-radius:4px; cursor:pointer; }
+.payment-option:hover { border-color:#f53d2d; }
+.payment-option.selected { border-color:#f53d2d; background:#fff3f3; }
+.payment-option label { display:flex; align-items:center; cursor:pointer; }
+.payment-option .icon { font-size:24px; margin-right:10px; }
+.payment-option .text { font-weight:bold; flex:1; }
+.payment-option .desc { color:#666; font-size:0.9em; }
+.payment-option input[type="radio"] { display:none; }
+.payment-detail-form { margin-top:10px; padding:10px; background:#f8f8f8; border-radius:4px; }
 </style>
 </head>
 <body>
@@ -65,8 +75,63 @@ header .user { font-size:14px; }
   <div class="form-group">
     <input type="text" id="recipientAddress" placeholder="收货地址">
   </div>
+  <h4>支付方式</h4>
+  <div class="payment-methods">
+    <div class="payment-option" onclick="selectPayment('cash')">
+      <input type="radio" name="payment" value="cash" id="pay_cash" checked>
+      <label for="pay_cash">
+        <span class="icon">💵</span>
+        <span class="text">现金支付</span>
+        <span class="desc">货到付款</span>
+      </label>
+    </div>
+    <div class="payment-option" onclick="selectPayment('credit_card')">
+      <input type="radio" name="payment" value="credit_card" id="pay_card">
+      <label for="pay_card">
+        <span class="icon">💳</span>
+        <span class="text">信用卡</span>
+        <span class="desc">支持 Visa / Mastercard</span>
+      </label>
+    </div>
+    <div class="payment-option" onclick="selectPayment('online_banking')">
+      <input type="radio" name="payment" value="online_banking" id="pay_bank">
+      <label for="pay_bank">
+        <span class="icon">🏦</span>
+        <span class="text">网上银行</span>
+        <span class="desc">支持所有大马银行</span>
+      </label>
+    </div>
+  </div>
+  <div id="payment_details" style="display:none;">
+    <!-- 信用卡表单 -->
+    <div id="card_form" class="payment-detail-form">
+      <div class="form-group">
+        <input type="text" placeholder="卡号" maxlength="19" oninput="formatCardNumber(this)">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="form-group">
+          <input type="text" placeholder="有效期 MM/YY" maxlength="5">
+        </div>
+        <div class="form-group">
+          <input type="text" placeholder="CVV" maxlength="3">
+        </div>
+      </div>
+    </div>
+    <!-- 网银表单 -->
+    <div id="bank_form" class="payment-detail-form">
+      <div class="form-group">
+        <select style="width:100%; padding:6px;">
+          <option value="">选择银行</option>
+          <option value="maybank">Maybank</option>
+          <option value="cimb">CIMB Bank</option>
+          <option value="public">Public Bank</option>
+          <option value="rhb">RHB Bank</option>
+        </select>
+      </div>
+    </div>
+  </div>
   <div class="form-group">
-    <button onclick="checkout()">确认下单</button>
+    <button onclick="checkout()" style="margin-top:15px;">确认下单</button>
   </div>
 </div>
 
@@ -180,6 +245,8 @@ async function toggleMyOrders(){
           <div>收件人: ${order.recipient_name}</div>
           <div>地址: ${order.recipient_address}</div>
           <div>总价: RM ${order.total_price}</div>
+          <div>支付方式: ${getPaymentMethodText(order.payment_method)}</div>
+          <div>支付状态: ${getPaymentStatusText(order.payment_status)}</div>
           <div>下单时间: ${new Date(order.created_at).toLocaleString()}</div>
         </div>
       </div>
@@ -193,6 +260,48 @@ async function toggleMyOrders(){
   }
 }
 
+// 格式化信用卡号
+function formatCardNumber(input) {
+  let value = input.value.replace(/\D/g, '');
+  let formattedValue = '';
+  for(let i = 0; i < value.length; i++) {
+    if(i > 0 && i % 4 === 0) {
+      formattedValue += ' ';
+    }
+    formattedValue += value[i];
+  }
+  input.value = formattedValue;
+}
+
+// 选择支付方式
+function selectPayment(method) {
+  // 更新单选框
+  document.querySelectorAll('.payment-option').forEach(opt => {
+    opt.classList.remove('selected');
+    if(opt.querySelector(`#pay_${method}`)) {
+      opt.classList.add('selected');
+      opt.querySelector(`#pay_${method}`).checked = true;
+    }
+  });
+
+  // 显示/隐藏对应的支付详情表单
+  const detailsDiv = document.getElementById('payment_details');
+  const cardForm = document.getElementById('card_form');
+  const bankForm = document.getElementById('bank_form');
+
+  if(method === 'credit_card') {
+    detailsDiv.style.display = 'block';
+    cardForm.style.display = 'block';
+    bankForm.style.display = 'none';
+  } else if(method === 'online_banking') {
+    detailsDiv.style.display = 'block';
+    cardForm.style.display = 'none';
+    bankForm.style.display = 'block';
+  } else {
+    detailsDiv.style.display = 'none';
+  }
+}
+
 async function checkout(){
   if(!currentUser || currentUser.role!=="buyer") return alert("请使用买家账号登录！");
   if(cart.length===0) return alert("购物车为空！");
@@ -200,11 +309,32 @@ async function checkout(){
   const recipient_address = document.getElementById('recipientAddress').value.trim();
   if(!recipient_name || !recipient_address) return alert("请填写收件信息");
 
+  // 获取选中的支付方式
+  const payment_method = document.querySelector('input[name="payment"]:checked').value;
+  
+  // 验证支付信息
+  if(payment_method === 'credit_card') {
+    const cardInputs = document.querySelectorAll('#card_form input');
+    for(let input of cardInputs) {
+      if(!input.value.trim()) return alert("请填写完整的信用卡信息");
+    }
+  } else if(payment_method === 'online_banking') {
+    const bankSelect = document.querySelector('#bank_form select');
+    if(!bankSelect.value) return alert("请选择银行");
+  }
+
   const itemsToSend = cart.map(p=>({id:p.id,price:p.price,quantity:p.quantity}));
   const msg = await safeFetch("api.php",{
     method:"POST",
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:"create_order",user_id:currentUser.id,items:itemsToSend,recipient_name,recipient_address})
+    body:JSON.stringify({
+      action:"create_order",
+      user_id:currentUser.id,
+      items:itemsToSend,
+      recipient_name,
+      recipient_address,
+      payment_method
+    })
   });
   if(!msg) return;
   if(msg.status==="ok"){
@@ -285,6 +415,26 @@ function updateSidebarVisibility() {
   if (sidebar) {
     sidebar.style.display = (currentUser && currentUser.role === 'seller') ? 'block' : 'none';
   }
+}
+
+// 支付方式显示
+function getPaymentMethodText(method) {
+  const methods = {
+    'cash': '现金支付',
+    'credit_card': '信用卡',
+    'online_banking': '网上银行'
+  };
+  return methods[method] || method;
+}
+
+// 支付状态显示
+function getPaymentStatusText(status) {
+  const statuses = {
+    'pending': '待支付',
+    'paid': '已支付',
+    'failed': '支付失败'
+  };
+  return statuses[status] || status;
 }
 
 // 初始化

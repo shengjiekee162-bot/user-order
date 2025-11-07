@@ -65,8 +65,11 @@ try {
                 $total = 0;
                 foreach($items as $i) $total += floatval($i['price']) * intval($i['quantity']);
 
-                $stmt = $conn->prepare("INSERT INTO orders (user_id, total_price, recipient_name, recipient_address) VALUES (?,?,?,?)");
-                $stmt->bind_param("idss", $user_id, $total, $recipient_name, $recipient_address);
+                $payment_method = $data['payment_method'] ?? 'cash';
+                $payment_status = $payment_method === 'cash' ? 'pending' : 'paid';
+
+                $stmt = $conn->prepare("INSERT INTO orders (user_id, total_price, recipient_name, recipient_address, payment_method, payment_status) VALUES (?,?,?,?,?,?)");
+                $stmt->bind_param("idssss", $user_id, $total, $recipient_name, $recipient_address, $payment_method, $payment_status);
                 $stmt->execute();
                 $order_id = $stmt->insert_id;
 
