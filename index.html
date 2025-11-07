@@ -4,29 +4,35 @@
 <meta charset="UTF-8">
 <title>Shopee Clone 🛍️</title>
 <style>
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #fafafa; margin:0; }
-header { background: #f53d2d; color: white; display:flex; justify-content:space-between; align-items:center; padding:15px 20px; }
-header h1 { margin:0; font-size:22px; }
-header .user { font-size:16px; }
-.search-bar { background:white; display:flex; justify-content:center; padding:10px; }
-.search-bar input { width:50%; padding:10px; border:1px solid #ddd; border-radius:6px 0 0 6px; }
-.search-bar button { border:none; background:#f53d2d; color:white; padding:10px 20px; border-radius:0 6px 6px 0; cursor:pointer; }
-.categories { display:flex; justify-content:center; background:#fff; padding:10px 0; border-bottom:1px solid #eee; }
-.categories button { background:none; border:none; padding:10px 15px; margin:0 5px; cursor:pointer; border-radius:5px; transition:0.2s; }
-.categories button:hover { background:#fcebea; }
-.products { display:flex; flex-wrap:wrap; justify-content:center; padding:20px; }
-.card { background:white; width:200px; margin:10px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); overflow:hidden; text-align:center; transition:transform 0.2s; }
-.card:hover { transform:scale(1.03); }
-.card img { width:100%; height:160px; object-fit:cover; }
-.card button { background:#f53d2d; color:white; border:none; padding:10px; width:100%; cursor:pointer; }
-.cart { position:fixed; bottom:20px; right:20px; background:#f53d2d; color:white; padding:15px 25px; border-radius:8px; cursor:pointer; box-shadow:0 4px 8px rgba(0,0,0,0.2); }
-.checkout-form { position:fixed; bottom:80px; right:20px; background:white; padding:15px; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.2); display:none; width:300px; }
-.checkout-form input { width:100%; padding:8px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px; }
-.checkout-form button { background:#f53d2d; color:white; border:none; padding:10px; width:100%; cursor:pointer; border-radius:4px; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #fafafa; margin:0; display:flex; }
+.sidebar { width:300px; padding:15px; border-left:1px solid #eee; background:#fff; height:100vh; box-shadow:-2px 0 5px rgba(0,0,0,0.05); }
+main { flex:1; padding:20px; }
+header { background: #f53d2d; color: white; display:flex; justify-content:space-between; align-items:center; padding:10px 15px; margin-bottom:10px; }
+header h1 { margin:0; font-size:20px; }
+header .user { font-size:14px; }
+.search-bar { display:flex; margin-bottom:10px; }
+.search-bar input { flex:1; padding:8px; border:1px solid #ddd; border-radius:6px 0 0 6px; }
+.search-bar button { border:none; background:#f53d2d; color:white; padding:8px 12px; border-radius:0 6px 6px 0; cursor:pointer; }
+.categories { display:flex; margin-bottom:10px; }
+.categories button { margin-right:5px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; background:#eee; }
+.products { display:flex; flex-wrap:wrap; }
+.card { background:white; width:150px; margin:5px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow:hidden; text-align:center; transition:transform 0.2s; padding:10px; }
+.card:hover { transform:scale(1.05); }
+.card h4 { margin:5px 0; font-size:14px; }
+.card button { width:100%; border:none; background:#f53d2d; color:white; padding:6px; cursor:pointer; }
+.cart { margin-top:10px; padding:10px; background:#f53d2d; color:white; border-radius:5px; cursor:pointer; text-align:center; }
+.form-group { margin-bottom:10px; }
+.form-group input { width:100%; padding:6px; border:1px solid #ddd; border-radius:4px; }
+.form-group button { width:100%; padding:8px; border:none; background:#f53d2d; color:white; cursor:pointer; border-radius:4px; }
+.order-card { background:white; padding:15px; margin-bottom:10px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+.order-card h4 { margin:0 0 10px 0; color:#f53d2d; }
+.order-card .items { white-space:pre-line; margin:10px 0; padding:10px; background:#f8f8f8; border-radius:4px; }
+.order-card .meta { color:#666; font-size:0.9em; }
 </style>
 </head>
 <body>
 
+<main>
 <header>
   <h1>Shopee Clone 🛒</h1>
   <div class="user" id="userDisplay">未登录</div>
@@ -34,7 +40,7 @@ header .user { font-size:16px; }
 
 <div class="search-bar">
   <input type="text" id="searchInput" placeholder="搜索商品...">
-  <button onclick="searchProducts()">🔍 搜索</button>
+  <button onclick="searchProducts()">搜索</button>
 </div>
 
 <div class="categories">
@@ -46,13 +52,55 @@ header .user { font-size:16px; }
 
 <div class="products" id="productContainer"></div>
 
-<div class="cart" onclick="toggleCheckoutForm()">🛒 结账 (<span id="count">0</span>)</div>
+<div style="display:flex; gap:10px;">
+  <div class="cart" onclick="toggleCheckoutForm()">🛒 购物车 (<span id="count">0</span>)</div>
+  <div class="cart" onclick="toggleMyOrders()" style="background:#4CAF50">📦 我的订单</div>
+</div>
 
-<div class="checkout-form" id="checkoutForm">
-  <h3>填写收件信息</h3>
-  <input type="text" id="recipientName" placeholder="收件人姓名">
-  <input type="text" id="recipientAddress" placeholder="收货地址">
-  <button onclick="checkout()">确认下单</button>
+<div class="checkout-form" id="checkoutForm" style="display:none; margin-top:10px;">
+  <h4>收件信息</h4>
+  <div class="form-group">
+    <input type="text" id="recipientName" placeholder="收件人姓名">
+  </div>
+  <div class="form-group">
+    <input type="text" id="recipientAddress" placeholder="收货地址">
+  </div>
+  <div class="form-group">
+    <button onclick="checkout()">确认下单</button>
+  </div>
+</div>
+
+<!-- 订单列表 -->
+<div id="myOrders" style="display:none; margin-top:20px;">
+  <h3>我的订单记录</h3>
+  <div id="ordersList"></div>
+</div>
+
+</main>
+
+<div class="sidebar">
+  <h4>卖家功能</h4>
+  <div class="form-group">
+    <input type="text" id="productName" placeholder="商品名称">
+  </div>
+  <div class="form-group">
+    <input type="number" id="productPrice" placeholder="价格">
+  </div>
+  <div class="form-group">
+    <select id="productCategory" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">
+      <option value="">请选择分类</option>
+      <option value="1">电子产品</option>
+      <option value="2">配件</option>
+      <option value="3">生活用品</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <input type="text" id="productDesc" placeholder="描述">
+  </div>
+  <div class="form-group">
+    <button onclick="addProduct()">添加商品</button>
+  </div>
 </div>
 
 <script>
@@ -63,23 +111,28 @@ let currentKeyword = '';
 
 function showUser() {
   const userDiv = document.getElementById('userDisplay');
-  if(currentUser) {
-    userDiv.innerHTML = `欢迎回来，<b>${currentUser.username}</b>`;
+  if(currentUser){
+    userDiv.innerHTML = `
+      欢迎回来 <b>${currentUser.username}</b> 
+      <span style="margin:0 10px">(${currentUser.role === 'buyer' ? '买家' : '卖家'})</span>
+      <button onclick="switchRole()" style="background:#fff; color:#f53d2d; border:none; padding:3px 8px; border-radius:4px; cursor:pointer">
+        切换为${currentUser.role === 'buyer' ? '卖家' : '买家'}
+      </button>
+    `;
   } else {
     userDiv.innerHTML = `<a href="login.html" style="color:white;">登录 / 注册</a>`;
   }
 }
 
-async function safeFetch(url, options) {
-  try {
+async function safeFetch(url, options){
+  try{
     const res = await fetch(url, options);
     const text = await res.text();
-    try { return JSON.parse(text); } 
-    catch { alert("服务器返回错误或非 JSON 数据"); return null; }
-  } catch(err) { alert("网络请求失败: " + err.message); return null; }
+    try { return JSON.parse(text);} catch { alert("返回非JSON"); return null;}
+  } catch(err){ alert("网络请求失败:"+err.message); return null;}
 }
 
-async function loadProducts() {
+async function loadProducts(){
   const data = await safeFetch(`api.php?category=${encodeURIComponent(currentCategory)}&search=${encodeURIComponent(currentKeyword)}`);
   if(!data) return;
   const container = document.getElementById('productContainer');
@@ -87,77 +140,157 @@ async function loadProducts() {
   data.forEach(p=>{
     container.innerHTML += `
       <div class="card">
-        <img src="${p.image}" alt="${p.name}">
-        <h3>${p.name}</h3>
+        <h4>${p.name}</h4>
         <p>RM ${p.price}</p>
         <button onclick='addToCart(${JSON.stringify(p)})'>加入购物车</button>
-      </div>`;
+      </div>
+    `;
   });
 }
 
-function addToCart(p) {
+function addToCart(p){
   const found = cart.find(i=>i.id===p.id);
   if(found) found.quantity++;
   else cart.push({...p, quantity:1});
   document.getElementById('count').innerText = cart.reduce((a,b)=>a+b.quantity,0);
 }
 
-function toggleCheckoutForm() {
+function toggleCheckoutForm(){
   const form = document.getElementById('checkoutForm');
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  form.style.display = form.style.display==='none'?'block':'none';
+  // 隐藏订单列表
+  document.getElementById('myOrders').style.display = 'none';
 }
 
-async function checkout() {
-  if(!currentUser) return alert("请先登录！");
-  if(cart.length===0) return alert("购物车为空！");
-  const recipient_name = document.getElementById('recipientName').value.trim();
-  const recipient_address = document.getElementById('recipientAddress').value.trim();
-  if(!recipient_name || !recipient_address) return alert("请填写收件人姓名和地址！");
-
-  const itemsToSend = cart.map(p => ({
-    id: p.id,
-    price: p.price,
-    quantity: p.quantity
-  }));
-
-  const msg = await safeFetch("api.php", {
-    method: "POST",
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: "create_order",
-      user_id: currentUser.id,
-      items: itemsToSend,
-      recipient_name,
-      recipient_address
-    })
-  });
-
-  if(!msg) return;
-  if(msg.status === "ok") {
-    alert("订单创建成功！");
-    cart = [];
-    document.getElementById('count').innerText = 0;
+async function toggleMyOrders(){
+  if(!currentUser) return alert('请先登录');
+  const ordersDiv = document.getElementById('myOrders');
+  
+  if(ordersDiv.style.display === 'none'){
+    // 加载订单数据
+    const orders = await safeFetch(`api.php?action=my_orders&user_id=${currentUser.id}`);
+    if(!orders) return;
+    
+    const ordersList = document.getElementById('ordersList');
+    ordersList.innerHTML = orders.length ? orders.map(order => `
+      <div class="order-card">
+        <h4>订单号: #${order.id}</h4>
+        <div class="items">${order.items}</div>
+        <div class="meta">
+          <div>收件人: ${order.recipient_name}</div>
+          <div>地址: ${order.recipient_address}</div>
+          <div>总价: RM ${order.total_price}</div>
+          <div>下单时间: ${new Date(order.created_at).toLocaleString()}</div>
+        </div>
+      </div>
+    `).join('') : '<p>暂无订单记录</p>';
+    
+    ordersDiv.style.display = 'block';
+    // 隐藏结账表单
     document.getElementById('checkoutForm').style.display = 'none';
-    document.getElementById('recipientName').value = '';
-    document.getElementById('recipientAddress').value = '';
-    window.location.href = "orders.html";
   } else {
-    alert("下单失败：" + msg.message);
+    ordersDiv.style.display = 'none';
   }
 }
 
-function searchProducts() {
-  currentKeyword = document.getElementById('searchInput').value;
+async function checkout(){
+  if(!currentUser || currentUser.role!=="buyer") return alert("请使用买家账号登录！");
+  if(cart.length===0) return alert("购物车为空！");
+  const recipient_name = document.getElementById('recipientName').value.trim();
+  const recipient_address = document.getElementById('recipientAddress').value.trim();
+  if(!recipient_name || !recipient_address) return alert("请填写收件信息");
+
+  const itemsToSend = cart.map(p=>({id:p.id,price:p.price,quantity:p.quantity}));
+  const msg = await safeFetch("api.php",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:"create_order",user_id:currentUser.id,items:itemsToSend,recipient_name,recipient_address})
+  });
+  if(!msg) return;
+  if(msg.status==="ok"){
+    alert("订单创建成功！");
+    cart=[];
+    document.getElementById('count').innerText=0;
+    toggleCheckoutForm();
+    loadProducts();
+  } else alert("下单失败："+msg.message);
+}
+
+async function addProduct(){
+  if(!currentUser || currentUser.role!=="seller") return alert("请使用卖家账号登录！");
+  const name = document.getElementById('productName').value.trim();
+  const price = parseFloat(document.getElementById('productPrice').value);
+  const category_id = parseInt(document.getElementById('productCategory').value);
+  const description = document.getElementById('productDesc').value.trim();
+  if(!name||!price||!category_id) return alert("请填写完整信息");
+
+  const msg = await safeFetch("api.php",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:"add_product",name,price,category_id,seller_id:currentUser.id,image,description})
+  });
+  if(!msg) return;
+  alert(msg.message);
+  if(msg.status==="ok"){
+    document.getElementById('productName').value='';
+    document.getElementById('productPrice').value='';
+    document.getElementById('productCategory').value='';
+    document.getElementById('productDesc').value='';
+    loadProducts();
+  }
+}
+
+function searchProducts(){
+  currentKeyword=document.getElementById('searchInput').value;
   loadProducts();
 }
 
-function filterCategory(cat) {
-  currentCategory = cat;
+function filterCategory(cat){
+  currentCategory=cat;
   loadProducts();
 }
 
+// 切换角色函数
+async function switchRole() {
+  if (!currentUser) return;
+  
+  const newRole = currentUser.role === 'buyer' ? 'seller' : 'buyer';
+  const msg = await safeFetch("auth.php", {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      action: "switch_role",
+      user_id: currentUser.id,
+      role: newRole
+    })
+  });
+
+  if (msg && msg.status === "ok") {
+    currentUser = msg.user;
+    localStorage.setItem("user", JSON.stringify(currentUser));
+    showUser();
+    // 刷新页面显示
+    document.querySelector('.sidebar').style.display = currentUser.role === 'seller' ? 'block' : 'none';
+    if (currentUser.role === 'buyer') {
+      loadProducts(); // 刷新商品列表
+    }
+  } else {
+    alert(msg ? msg.message : "角色切换失败");
+  }
+}
+
+// 添加侧边栏显示控制
+function updateSidebarVisibility() {
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) {
+    sidebar.style.display = (currentUser && currentUser.role === 'seller') ? 'block' : 'none';
+  }
+}
+
+// 初始化
 showUser();
 loadProducts();
+updateSidebarVisibility(); // 初始化时设置侧边栏显示状态
 </script>
 
 </body>
