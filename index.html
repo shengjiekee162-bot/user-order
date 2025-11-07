@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>Shopee Clone 🛍️</title>
+<title>示例商城 🛍️</title>
+  <!-- 响应式视窗 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #fafafa; margin:0; display:flex; }
 .sidebar { width:300px; padding:15px; border-left:1px solid #eee; background:#fff; height:100vh; box-shadow:-2px 0 5px rgba(0,0,0,0.05); }
@@ -38,14 +40,55 @@ header .user { font-size:14px; }
 .payment-option .desc { color:#666; font-size:0.9em; }
 .payment-option input[type="radio"] { display:none; }
 .payment-detail-form { margin-top:10px; padding:10px; background:#f8f8f8; border-radius:4px; }
+/* Modal 样式 */
+.modal { position:fixed; inset:0; background: rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:999; }
+.modal-content { background:#fff; padding:18px; width:80%; max-width:900px; border-radius:8px; box-shadow:0 6px 30px rgba(0,0,0,0.2); }
+/* 订单摘要样式 */
+#orderSummaryBody table { width:100%; border-collapse:collapse; }
+#orderSummaryBody th, #orderSummaryBody td { padding:6px 8px; border-bottom:1px solid #eee; text-align:left; }
+#orderSummaryBody .total { text-align:right; font-weight:bold; padding-top:8px; }
+
+/* Mobile responsive rules */
+@media (max-width: 900px) {
+  body { flex-direction:column; }
+  header { flex-wrap:wrap; padding:10px; }
+  header h1 { flex:1 1 100%; font-size:18px; margin-bottom:8px; }
+  .search-bar { order:3; width:100%; }
+  .categories { order:4; width:100%; overflow:auto; }
+  main { padding:12px; }
+  .products { justify-content:center; }
+  .card { width:45%; margin:6px; }
+  .sidebar { width:100%; order:5; box-shadow:none; border-left:none; }
+  .sidebar h4 { margin-top:0; }
+  .cart { padding:12px; font-size:16px; }
+}
+
+@media (max-width: 600px) {
+  .card { width:48%; }
+  .sidebar { display:none; /* show via toggle */ }
+  /* modal adapts to mobile full-screen, scrollable */
+  .modal-content { width:95%; max-width:600px; height:90vh; overflow:auto; padding:12px; }
+  .modal { align-items:flex-end; }
+  header .mobile-sidebar-btn { display:inline-block; }
+}
+
+/* Sidebar overlay when opened on mobile */
+.sidebar.mobile-open { display:block; position:fixed; right:0; top:0; height:100vh; width:80%; max-width:360px; background:#fff; box-shadow:-6px 0 30px rgba(0,0,0,0.2); z-index:1200; transform:translateX(0); }
+.sidebar.mobile-hidden { transform:translateX(100%); }
+
+.mobile-sidebar-btn { display:none; background:#fff; color:#f53d2d; border:none; padding:6px 8px; border-radius:4px; cursor:pointer; margin-right:8px; }
+</style>
 </style>
 </head>
 <body>
 
 <main>
 <header>
-  <h1>Shopee Clone 🛒</h1>
-  <div class="user" id="userDisplay">未登录</div>
+  <h1>示例商城 🛒</h1>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <button class="mobile-sidebar-btn" onclick="toggleSidebarMobile()" aria-label="打开侧边栏">☰</button>
+    <div class="user" id="userDisplay">未登录</div>
+  </div>
 </header>
 
 <div class="search-bar">
@@ -62,84 +105,122 @@ header .user { font-size:14px; }
 
 <div class="products" id="productContainer"></div>
 
-<div style="display:flex; gap:10px;">
+  <div style="display:flex; gap:10px;">
   <div class="cart" onclick="toggleCheckoutForm()">🛒 购物车 (<span id="count">0</span>)</div>
-  <div class="cart" onclick="toggleMyOrders()" style="background:#4CAF50">📦 我的订单</div>
-</div>
+  <div class="cart"><a href="orders.html" style="color:white; text-decoration:none; display:block;">📦 我的订单</a></div>
+  </div>
 
-<div class="checkout-form" id="checkoutForm" style="display:none; margin-top:10px;">
-  <h4>收件信息</h4>
-  <div class="form-group">
-    <input type="text" id="recipientName" placeholder="收件人姓名">
-  </div>
-  <div class="form-group">
-    <input type="text" id="recipientAddress" placeholder="收货地址">
-  </div>
-  <h4>支付方式</h4>
-  <div class="payment-methods">
-    <div class="payment-option" onclick="selectPayment('cash')">
-      <input type="radio" name="payment" value="cash" id="pay_cash" checked>
-      <label for="pay_cash">
-        <span class="icon">💵</span>
-        <span class="text">现金支付</span>
-        <span class="desc">货到付款</span>
-      </label>
-    </div>
-    <div class="payment-option" onclick="selectPayment('credit_card')">
-      <input type="radio" name="payment" value="credit_card" id="pay_card">
-      <label for="pay_card">
-        <span class="icon">💳</span>
-        <span class="text">信用卡</span>
-        <span class="desc">支持 Visa / Mastercard</span>
-      </label>
-    </div>
-    <div class="payment-option" onclick="selectPayment('online_banking')">
-      <input type="radio" name="payment" value="online_banking" id="pay_bank">
-      <label for="pay_bank">
-        <span class="icon">🏦</span>
-        <span class="text">网上银行</span>
-        <span class="desc">支持所有大马银行</span>
-      </label>
-    </div>
-  </div>
-  <div id="payment_details" style="display:none;">
-    <!-- 信用卡表单 -->
-    <div id="card_form" class="payment-detail-form">
-      <div class="form-group">
-        <input type="text" placeholder="卡号" maxlength="19" oninput="formatCardNumber(this)">
+<!-- 结账模态弹窗（合并地址/支付/个人资料） -->
+<div id="checkoutModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h3>结账 & 支付</h3>
+      <div>
+        <span style="margin-right:10px; color:#666">当前用户: <b id="checkoutUser">未登录</b></span>
+        <button onclick="showCheckoutTab()" style="background:#fff; border:1px solid #ddd; padding:6px 8px; border-radius:4px; margin-right:6px;">结账</button>
+        <button onclick="showOrdersTab()" style="background:#fff; border:1px solid #ddd; padding:6px 8px; border-radius:4px; margin-right:6px;">我的订单</button>
+        <button onclick="toggleCheckoutForm()" style="background:#ddd; border:none; padding:6px 8px; border-radius:4px;">关闭</button>
       </div>
-      <div style="display:flex;gap:10px;">
-        <div class="form-group">
-          <input type="text" placeholder="有效期 MM/YY" maxlength="5">
+    </div>
+
+    <!-- 订单摘要（显示购物车里的商品） -->
+    <div id="orderSummary" style="margin-bottom:12px; display:none;">
+      <h4>订单摘要</h4>
+      <div id="orderSummaryBody" style="background:#fbfbfb; padding:10px; border-radius:6px;">
+        <!-- JS 填充购物车商品 -->
+      </div>
+    </div>
+
+    <div style="display:flex; gap:20px;">
+      <!-- 左侧：地址选择/添加 -->
+      <div style="flex:1;">
+        <h4>收件地址</h4>
+        <div id="addressSelectArea" class="form-group">
+          <select id="addressSelect" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">
+            <option value="">请选择收货地址</option>
+          </select>
+          <button onclick="showAddAddressForm()" style="margin-top:8px; width:100%; background:#4CAF50; color:white; border:none; border-radius:4px; padding:6px;">添加新地址</button>
         </div>
-        <div class="form-group">
-          <input type="text" placeholder="CVV" maxlength="3">
+        <div id="addAddressForm" style="display:none; margin-bottom:10px;">
+          <input type="text" id="newRecipientName" placeholder="收件人姓名" style="margin-bottom:5px; width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">
+          <input type="text" id="newRecipientAddress" placeholder="收货地址" style="margin-bottom:5px; width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">
+          <label style="display:block; margin-bottom:5px;"><input type="checkbox" id="isDefaultAddress"> 设为默认地址</label>
+          <button onclick="addAddress()" style="width:100%; background:#f53d2d; color:white; border:none; border-radius:4px; padding:6px;">保存地址</button>
+          <button onclick="hideAddAddressForm()" style="width:100%; background:#ddd; color:#333; border:none; border-radius:4px; padding:6px; margin-top:5px;">取消</button>
         </div>
       </div>
-    </div>
-    <!-- 网银表单 -->
-    <div id="bank_form" class="payment-detail-form">
-      <div class="form-group">
-        <select style="width:100%; padding:6px;">
-          <option value="">选择银行</option>
-          <option value="maybank">Maybank</option>
-          <option value="cimb">CIMB Bank</option>
-          <option value="public">Public Bank</option>
-          <option value="rhb">RHB Bank</option>
-        </select>
+
+      <!-- 右侧：支付方式 -->
+      <div style="width:320px;">
+        <h4>支付方式</h4>
+        <div class="payment-methods">
+          <div class="payment-option" onclick="selectPayment('cash')">
+            <input type="radio" name="payment" value="cash" id="pay_cash" checked>
+            <label for="pay_cash">
+              <span class="icon">💵</span>
+              <span class="text">现金支付</span>
+              <span class="desc">货到付款</span>
+            </label>
+          </div>
+          <div class="payment-option" onclick="selectPayment('credit_card')">
+            <input type="radio" name="payment" value="credit_card" id="pay_card">
+            <label for="pay_card">
+              <span class="icon">💳</span>
+              <span class="text">信用卡</span>
+              <span class="desc">支持 Visa / Mastercard</span>
+            </label>
+          </div>
+          <div class="payment-option" onclick="selectPayment('online_banking')">
+            <input type="radio" name="payment" value="online_banking" id="pay_bank">
+            <label for="pay_bank">
+              <span class="icon">🏦</span>
+              <span class="text">网上银行</span>
+              <span class="desc">支持所有大马银行</span>
+            </label>
+          </div>
+        </div>
+        <div id="payment_details" style="display:none;">
+          <!-- 信用卡表单 -->
+          <div id="card_form" class="payment-detail-form">
+            <div class="form-group">
+              <input type="text" placeholder="卡号" maxlength="19" oninput="formatCardNumber(this)">
+            </div>
+            <div style="display:flex;gap:10px;">
+              <div class="form-group">
+                <input type="text" placeholder="有效期 MM/YY" maxlength="5">
+              </div>
+              <div class="form-group">
+                <input type="text" placeholder="CVV" maxlength="3">
+              </div>
+            </div>
+          </div>
+          <!-- 网银表单 -->
+          <div id="bank_form" class="payment-detail-form">
+            <div class="form-group">
+              <select id="bankSelect" style="width:100%; padding:6px;">
+                <option value="">选择银行</option>
+                <option value="maybank">Maybank</option>
+                <option value="cimb">CIMB Bank</option>
+                <option value="public">Public Bank</option>
+                <option value="rhb">RHB Bank</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <button onclick="checkout()" style="margin-top:5px; width:100%;">确认下单</button>
+        </div>
       </div>
     </div>
   </div>
-  <div class="form-group">
-    <button onclick="checkout()" style="margin-top:15px;">确认下单</button>
-  </div>
 </div>
 
-<!-- 订单列表 -->
-<div id="myOrders" style="display:none; margin-top:20px;">
-  <h3>我的订单记录</h3>
-  <div id="ordersList"></div>
-</div>
+    <!-- 订单区域（同 modal 内） -->
+    <div id="ordersSection" style="display:none; margin-top:12px;">
+      <h3>我的订单记录</h3>
+      <div id="ordersListModal"></div>
+    </div>
 
 </main>
 
@@ -173,6 +254,60 @@ let cart = [];
 let currentUser = JSON.parse(localStorage.getItem("user")) || null;
 let currentCategory = '';
 let currentKeyword = '';
+let addressList = [];
+let selectedAddressId = '';
+
+// 地址管理相关
+async function loadAddresses() {
+  if (!currentUser) return;
+  const res = await safeFetch(`api.php?action=list_addresses&user_id=${currentUser.id}`);
+  addressList = Array.isArray(res) ? res : [];
+  const select = document.getElementById('addressSelect');
+  select.innerHTML = '<option value="">请选择收货地址</option>';
+  addressList.forEach(addr => {
+    select.innerHTML += `<option value="${addr.id}"${addr.is_default ? ' selected' : ''}>${addr.recipient_name} - ${addr.recipient_address}${addr.is_default ? '（默认）' : ''}</option>`;
+    if (addr.is_default) selectedAddressId = addr.id;
+  });
+}
+
+function showAddAddressForm() {
+  document.getElementById('addAddressForm').style.display = 'block';
+}
+function hideAddAddressForm() {
+  document.getElementById('addAddressForm').style.display = 'none';
+}
+
+async function addAddress() {
+  const name = document.getElementById('newRecipientName').value.trim();
+  const address = document.getElementById('newRecipientAddress').value.trim();
+  const isDefault = document.getElementById('isDefaultAddress').checked ? 1 : 0;
+  if (!name || !address) return alert('请填写完整地址信息');
+  const res = await safeFetch('api.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      action: 'add_address',
+      user_id: currentUser.id,
+      recipient_name: name,
+      recipient_address: address,
+      is_default: isDefault
+    })
+  });
+  if (res && res.status === 'ok') {
+    alert('地址已保存');
+    hideAddAddressForm();
+    document.getElementById('newRecipientName').value = '';
+    document.getElementById('newRecipientAddress').value = '';
+    document.getElementById('isDefaultAddress').checked = false;
+    await loadAddresses();
+  } else {
+    alert(res && res.message ? res.message : '保存失败');
+  }
+}
+
+document.getElementById('addressSelect').addEventListener('change', function() {
+  selectedAddressId = this.value;
+});
 
 function showUser() {
   const userDiv = document.getElementById('userDisplay');
@@ -220,44 +355,105 @@ function addToCart(p){
   document.getElementById('count').innerText = cart.reduce((a,b)=>a+b.quantity,0);
 }
 
-function toggleCheckoutForm(){
-  const form = document.getElementById('checkoutForm');
-  form.style.display = form.style.display==='none'?'block':'none';
-  // 隐藏订单列表
-  document.getElementById('myOrders').style.display = 'none';
+// 渲染订单摘要（在结账时显示购物车内容）
+function renderOrderSummary(){
+  const container = document.getElementById('orderSummaryBody');
+  if(!container) return;
+  if(!cart || cart.length===0){
+    container.innerHTML = '<p>购物车为空</p>';
+    document.getElementById('orderSummary').style.display = 'none';
+    return;
+  }
+  document.getElementById('orderSummary').style.display = 'block';
+  let total = 0;
+  let html = '<table><thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr></thead><tbody>';
+  cart.forEach(it=>{
+    const subtotal = parseFloat(it.price) * parseInt(it.quantity);
+    total += subtotal;
+    html += `<tr><td>${escapeHtml(it.name)}</td><td>RM ${parseFloat(it.price).toFixed(2)}</td><td>${it.quantity}</td><td>RM ${subtotal.toFixed(2)}</td></tr>`;
+  });
+  html += `</tbody></table><div class="total">总计: RM ${total.toFixed(2)}</div>`;
+  container.innerHTML = html;
 }
 
-async function toggleMyOrders(){
-  if(!currentUser) return alert('请先登录');
+// 简单转义文本，防止 XSS（购物车数据来自本站）
+function escapeHtml(str){
+  if(!str) return '';
+  return String(str).replace(/[&<>"']/g, function(s){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s];
+  });
+}
+
+async function toggleCheckoutForm(){
+  const modal = document.getElementById('checkoutModal');
   const ordersDiv = document.getElementById('myOrders');
-  
-  if(ordersDiv.style.display === 'none'){
-    // 加载订单数据
-    const orders = await safeFetch(`api.php?action=my_orders&user_id=${currentUser.id}`);
-    if(!orders) return;
-    
-    const ordersList = document.getElementById('ordersList');
-    ordersList.innerHTML = orders.length ? orders.map(order => `
-      <div class="order-card">
-        <h4>订单号: #${order.id}</h4>
-        <div class="items">${order.items}</div>
-        <div class="meta">
-          <div>收件人: ${order.recipient_name}</div>
-          <div>地址: ${order.recipient_address}</div>
-          <div>总价: RM ${order.total_price}</div>
-          <div>支付方式: ${getPaymentMethodText(order.payment_method)}</div>
-          <div>支付状态: ${getPaymentStatusText(order.payment_status)}</div>
-          <div>下单时间: ${new Date(order.created_at).toLocaleString()}</div>
-        </div>
-      </div>
-    `).join('') : '<p>暂无订单记录</p>';
-    
-    ordersDiv.style.display = 'block';
-    // 隐藏结账表单
-    document.getElementById('checkoutForm').style.display = 'none';
+  if(modal.style.display === 'none' || modal.style.display === ''){
+    // 打开模态：加载地址并初始化视图
+    if(!currentUser) return alert('请先登录');
+    document.getElementById('checkoutUser').innerText = currentUser.username || '未知用户';
+    await loadAddresses();
+    // 设置下拉为默认地址（如果有）
+    const select = document.getElementById('addressSelect');
+    try{ select.value = selectedAddressId || ''; }catch(e){}
+  // 默认支付方式为现金
+  selectPayment('cash');
+  // 确保显示结账（非订单）页签
+  showCheckoutTab();
+  // 渲染订单摘要
+  renderOrderSummary();
+    // 隐藏订单列表
+    if(ordersDiv) ordersDiv.style.display = 'none';
+    modal.style.display = 'flex';
   } else {
-    ordersDiv.style.display = 'none';
+    modal.style.display = 'none';
   }
+}
+
+async function openOrdersModal(){
+  if(!currentUser) return alert('请先登录');
+  const modal = document.getElementById('checkoutModal');
+  document.getElementById('checkoutUser').innerText = currentUser.username || '未知用户';
+  // 显示 modal 并切换到订单区域
+  await loadAddresses();
+  // show orders section
+  showOrdersTab();
+  modal.style.display = 'flex';
+}
+
+async function showOrdersTab(){
+  const checkoutSection = document.querySelector('.modal-content > div:nth-child(2)');
+  // 隐藏左/right checkout layout
+  // 直接展示订单列表区域
+  document.getElementById('ordersSection').style.display = 'block';
+  document.getElementById('addressSelectArea').style.display = 'none';
+  document.getElementById('payment_details').style.display = 'none';
+  // 加载订单
+  const orders = await safeFetch(`api.php?action=my_orders&user_id=${currentUser.id}`);
+  if(!orders) return;
+  const list = document.getElementById('ordersListModal');
+  list.innerHTML = orders.length ? orders.map(order => `
+    <div class="order-card">
+      <h4>订单号: #${order.id}</h4>
+      <div class="items">${order.items}</div>
+      <div class="meta">
+        <div>收件人: ${order.recipient_name}</div>
+        <div>地址: ${order.recipient_address}</div>
+        <div>总价: RM ${order.total_price}</div>
+        <div>支付方式: ${getPaymentMethodText(order.payment_method)}</div>
+        <div>支付状态: ${getPaymentStatusText(order.payment_status)}</div>
+        <div>下单时间: ${new Date(order.created_at).toLocaleString()}</div>
+      </div>
+    </div>
+  `).join('') : '<p>暂无订单记录</p>';
+}
+
+function showCheckoutTab(){
+  // 恢复地址/支付界面
+  document.getElementById('ordersSection').style.display = 'none';
+  document.getElementById('addressSelectArea').style.display = 'block';
+  selectPayment('cash');
+  // 更新订单摘要内容
+  renderOrderSummary();
 }
 
 // 格式化信用卡号
@@ -305,9 +501,11 @@ function selectPayment(method) {
 async function checkout(){
   if(!currentUser || currentUser.role!=="buyer") return alert("请使用买家账号登录！");
   if(cart.length===0) return alert("购物车为空！");
-  const recipient_name = document.getElementById('recipientName').value.trim();
-  const recipient_address = document.getElementById('recipientAddress').value.trim();
-  if(!recipient_name || !recipient_address) return alert("请填写收件信息");
+  // 获取选中的地址
+  const addr = addressList.find(a => a.id == selectedAddressId);
+  if (!addr) return alert('请选择收货地址');
+  const recipient_name = addr.recipient_name;
+  const recipient_address = addr.recipient_address;
 
   // 获取选中的支付方式
   const payment_method = document.querySelector('input[name="payment"]:checked').value;
@@ -357,7 +555,7 @@ async function addProduct(){
   const msg = await safeFetch("api.php",{
     method:"POST",
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:"add_product",name,price,category_id,seller_id:currentUser.id,image,description})
+    body:JSON.stringify({action:"add_product",name,price,category_id,seller_id:currentUser.id,description})
   });
   if(!msg) return;
   alert(msg.message);
@@ -441,6 +639,22 @@ function getPaymentStatusText(status) {
 showUser();
 loadProducts();
 updateSidebarVisibility(); // 初始化时设置侧边栏显示状态
+
+// Mobile sidebar toggle for small screens
+function toggleSidebarMobile(){
+  const sb = document.querySelector('.sidebar');
+  if(!sb) return;
+  // toggle mobile-open class
+  if(sb.classList.contains('mobile-open')){
+    sb.classList.remove('mobile-open');
+    // allow it to hide after transition
+    setTimeout(()=>{ if(window.innerWidth <= 600) sb.style.display='none'; }, 300);
+  } else {
+    sb.style.display='block';
+    // small delay to allow display before adding class
+    setTimeout(()=> sb.classList.add('mobile-open'), 10);
+  }
+}
 </script>
 
 </body>

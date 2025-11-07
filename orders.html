@@ -1,68 +1,112 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<title>我的订单 - Shopee Clone</title>
-<style>
-body { font-family: Arial, sans-serif; background:#fafafa; margin:0; padding:0; }
-header { background:#f53d2d; color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; }
-header h1 { margin:0; }
-.orders { padding:20px; }
-.order { background:white; margin-bottom:15px; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-.order h3 { margin:0 0 10px 0; }
-.order table { width:100%; border-collapse: collapse; margin-top:10px; }
-.order table th, .order table td { border:1px solid #ddd; padding:8px; text-align:left; }
-</style>
+  <meta charset="utf-8">
+  <title>我的订单</title>
+  <style>
+    body{font-family: 'Segoe UI', Arial, sans-serif; background:#fafafa; margin:0; padding:20px}
+    header{background:#f53d2d;color:#fff;padding:12px 20px;border-radius:6px;margin-bottom:16px}
+    header h1{margin:0;font-size:18px}
+    .container{max-width:1000px;margin:0 auto}
+    .order-card{background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.08);margin-bottom:12px}
+    .order-card h4{margin:0 0 8px;color:#f53d2d}
+    .items{white-space:pre-line;background:#f8f8f8;padding:10px;border-radius:6px;margin-bottom:8px}
+    .meta{color:#666;font-size:0.9em}
+    .login-prompt{background:#fff;padding:20px;border-radius:8px;text-align:center}
+    a.button{display:inline-block;padding:8px 12px;background:#f53d2d;color:#fff;border-radius:6px;text-decoration:none}
+    .detail-modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center}
+    .detail-content{background:#fff;padding:16px;border-radius:8px;max-width:700px;width:90%;}
+    .close-btn{background:#eee;border:none;padding:6px 8px;border-radius:4px;cursor:pointer}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{border:1px solid #ddd;padding:8px;text-align:left}
+  </style>
 </head>
 <body>
+  <header>
+    <div class="container">
+      <h1>我的订单</h1>
+    </div>
+  </header>
 
-<header>
-  <h1>我的订单 🧾</h1>
-  <div><a href="index.html" style="color:white;">返回首页</a></div>
-</header>
+  <div class="container" id="main">
+    <div id="content"></div>
+  </div>
 
-<div class="orders" id="ordersContainer"></div>
+  <!-- 详情模态 -->
+  <div id="detailModal" class="detail-modal">
+    <div class="detail-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h3 id="detailTitle">订单详情</h3>
+        <button class="close-btn" onclick="closeDetail()">关闭</button>
+      </div>
+      <div id="detailBody"></div>
+    </div>
+  </div>
 
-<script>
-let currentUser = JSON.parse(localStorage.getItem("user"));
-if(!currentUser){
-  alert("请先登录！");
-  window.location.href="login.html";
-}
+  <script>
+    // Helpers
+    function safeFetch(url, options){
+      return fetch(url, options).then(r=>r.text()).then(t=>{try{return JSON.parse(t)}catch(e){alert('返回非JSON');return null}}).catch(e=>{alert('网络请求失败:'+e.message);return null});
+    }
 
-// 安全 fetch
-async function safeFetch(url, options){
-  try{
-    const res = await fetch(url, options);
-    const text = await res.text();
-    try { return JSON.parse(text); } 
-    catch { alert("返回错误: "+text); return null; }
-  } catch(err){ alert("网络错误: "+err.message); return null; }
-}
+    function getPaymentMethodText(method){const m={'cash':'现金支付','credit_card':'信用卡','online_banking':'网上银行'};return m[method]||method}
+    function getPaymentStatusText(s){const t={'pending':'待支付','paid':'已支付','failed':'支付失败'};return t[s]||s}
 
-// 加载订单
-async function loadOrders(){
-  const data = await safeFetch(`api.php?action=my_orders&user_id=${currentUser.id}`);
-  if(!data) return;
-  const container = document.getElementById('ordersContainer');
-  container.innerHTML = '';
-  data.forEach(order=>{
-    let itemsHtml = '<table><tr><th>商品</th><th>价格</th><th>数量</th></tr>';
-    order.items.forEach(i=>{
-      itemsHtml += `<tr><td>${i.name}</td><td>RM ${i.price}</td><td>${i.quantity}</td></tr>`;
-    });
-    itemsHtml += '</table>';
-    container.innerHTML += `
-      <div class="order">
-        <h3>订单ID: ${order.order_id} | 总价: RM ${order.total_price} | 下单时间: ${order.created_at}</h3>
-        <p>收件人: ${order.recipient_name} | 地址: ${order.recipient_address}</p>
-        ${itemsHtml}
-      </div>`;
-  });
-}
+    // 渲染订单列表，包含查看详情按钮
+    function renderOrders(orders){
+      const content=document.getElementById('content');
+      if(!orders || orders.length===0){
+        content.innerHTML = '<div class="login-prompt">暂无订单记录<br><br><a href="index.html" class="button">返回商店</a></div>';
+        return;
+      }
+      content.innerHTML = orders.map(o=>`
+        <div class="order-card">
+          <h4>订单号: #${o.id}</h4>
+          <div class="items">${o.items}</div>
+          <div class="meta">
+            <div>收件人: ${o.recipient_name}</div>
+            <div>地址: ${o.recipient_address}</div>
+            <div>总价: RM ${o.total_price}</div>
+            <div>支付方式: ${getPaymentMethodText(o.payment_method)}</div>
+            <div>支付状态: ${getPaymentStatusText(o.payment_status)}</div>
+            <div>下单时间: ${new Date(o.created_at).toLocaleString()}</div>
+            <div style="margin-top:8px"><button onclick="openDetail(${o.id})" class="button">查看详情</button></div>
+          </div>
+        </div>
+      `).join('');
+    }
 
-loadOrders();
-</script>
+    // 打开详情模态并拉取详情
+    async function openDetail(orderId){
+      const res = await safeFetch(`api.php?action=order_detail&order_id=${orderId}`);
+      if(!res) return;
+      const title = document.getElementById('detailTitle');
+      const body = document.getElementById('detailBody');
+      title.innerText = `订单 #${res.order.id} 的详情`;
+      let html = `<p>收件人: ${res.order.recipient_name} <br> 地址: ${res.order.recipient_address} <br> 总价: RM ${res.order.total_price} <br> 下单时间: ${res.order.created_at} <br> 支付方式: ${getPaymentMethodText(res.order.payment_method)} <br> 支付状态: ${getPaymentStatusText(res.order.payment_status)}</p>`;
+      html += `<table><tr><th>商品ID</th><th>名称</th><th>单价</th><th>数量</th><th>小计</th></tr>`;
+      res.items.forEach(it=>{
+        const subtotal = (parseFloat(it.price) * parseInt(it.quantity)).toFixed(2);
+        html += `<tr><td>${it.product_id}</td><td>${it.name}</td><td>RM ${it.price}</td><td>${it.quantity}</td><td>RM ${subtotal}</td></tr>`;
+      });
+      html += '</table>';
+      body.innerHTML = html;
+      document.getElementById('detailModal').style.display = 'flex';
+    }
+    function closeDetail(){ document.getElementById('detailModal').style.display = 'none'; }
 
+    // Load orders for current user
+    (async function(){
+      const user = JSON.parse(localStorage.getItem('user')||'null');
+      const content=document.getElementById('content');
+      if(!user){
+        content.innerHTML = '<div class="login-prompt">您尚未登录<br><br><a href="login.html" class="button">去登录</a></div>';
+        return;
+      }
+      content.innerHTML = '<p>加载中...</p>';
+      const orders = await safeFetch(`api.php?action=my_orders&user_id=${user.id}`);
+      renderOrders(orders);
+    })();
+  </script>
 </body>
 </html>

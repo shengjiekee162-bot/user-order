@@ -7,6 +7,18 @@ $method = $_SERVER['REQUEST_METHOD'];
 try {
     switch($method) {
         case "GET":
+            // 获取地址列表
+            if(isset($_GET['action']) && $_GET['action'] === 'list_addresses' && isset($_GET['user_id'])) {
+                $user_id = intval($_GET['user_id']);
+                $sql = "SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, id DESC";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $addresses = $result->fetch_all(MYSQLI_ASSOC);
+                echo json_encode($addresses);
+                break;
+            }
             // 获取用户订单
             if(isset($_GET['action']) && $_GET['action'] === 'my_orders' && isset($_GET['user_id'])) {
                 $user_id = intval($_GET['user_id']);
@@ -18,7 +30,6 @@ try {
                        WHERE o.user_id = ?
                        GROUP BY o.id
                        ORDER BY o.created_at DESC";
-                
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("i", $user_id);
                 $stmt->execute();
@@ -27,12 +38,28 @@ try {
                 echo json_encode($orders);
                 break;
             }
-            
+            // 获取订单详情
+            if(isset($_GET['action']) && $_GET['action'] === 'order_detail' && isset($_GET['order_id'])) {
+                $order_id = intval($_GET['order_id']);
+                $stmt = $conn->prepare("SELECT * FROM orders WHERE id = ? LIMIT 1");
+                $stmt->bind_param("i", $order_id);
+                $stmt->execute();
+                $orderRes = $stmt->get_result();
+                $order = $orderRes->fetch_assoc();
+
+                $stmt2 = $conn->prepare("SELECT oi.quantity, p.id as product_id, p.name, p.price FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?");
+                $stmt2->bind_param("i", $order_id);
+                $stmt2->execute();
+                $itemsRes = $stmt2->get_result();
+                $items = $itemsRes->fetch_all(MYSQLI_ASSOC);
+
+                echo json_encode(['order' => $order, 'items' => $items]);
+                break;
+            }
             // 获取商品
             $category = isset($_GET['category']) ? $_GET['category'] : '';
             $keyword = isset($_GET['search']) ? $_GET['search'] : '';
             $sql = "SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON p.category_id=c.id WHERE 1";
-
             if($category){
                 $category_safe = $conn->real_escape_string($category);
                 $sql .= " AND c.name LIKE '%$category_safe%'";
@@ -41,7 +68,6 @@ try {
                 $keyword_safe = $conn->real_escape_string($keyword);
                 $sql .= " AND p.name LIKE '%$keyword_safe%'";
             }
-
             $res = $conn->query($sql);
             if(!$res) throw new Exception($conn->error);
             echo json_encode($res->fetch_all(MYSQLI_ASSOC));
@@ -83,6 +109,26 @@ try {
 
                 echo json_encode(["status"=>"ok","message"=>"订单创建成功","order_id"=>$order_id]);
             }
+            // 添加新地址
+            else if($data['action'] === "add_address"){
+                if(!isset($data['user_id'], $data['recipient_name'], $data['recipient_address']))
+                    throw new Exception("缺少地址参数");
+                $user_id = intval($data['user_id']);
+                $recipient_name = $data['recipient_name'];
+                $recipient_address = $data['recipient_address'];
+                $is_default = isset($data['is_default']) && $data['is_default'] ? 1 : 0;
+                if($is_default){
+                    // 取消该用户其他默认地址
+                    $conn->query("UPDATE addresses SET is_default=0 WHERE user_id=$user_id");
+                }
+                $stmt = $conn->prepare("INSERT INTO addresses (user_id, recipient_name, recipient_address, is_default) VALUES (?,?,?,?)");
+                $stmt->bind_param("issi", $user_id, $recipient_name, $recipient_address, $is_default);
+                if($stmt->execute()){
+                    echo json_encode(["status"=>"ok","message"=>"地址添加成功"]);
+                }else{
+                    echo json_encode(["status"=>"fail","message"=>"地址添加失败"]);
+                }
+            }
 
             // 卖家添加商品
             else if($data['action'] === "add_product"){
@@ -106,28 +152,7 @@ try {
             }
             break;
 
-        case "GET":
-            // 获取用户订单
-            if(isset($_GET['action']) && $_GET['action'] === 'my_orders' && isset($_GET['user_id'])) {
-                $user_id = intval($_GET['user_id']);
-                $sql = "SELECT o.*, 
-                       GROUP_CONCAT(CONCAT(p.name, ' x', oi.quantity, ' (RM', p.price, ')') SEPARATOR '\n') as items
-                       FROM orders o
-                       JOIN order_items oi ON o.id = oi.order_id
-                       JOIN products p ON oi.product_id = p.id
-                       WHERE o.user_id = ?
-                       GROUP BY o.id
-                       ORDER BY o.created_at DESC";
-                
-                $stmt = $conn->prepare($sql);
-                $stmt->bind_param("i", $user_id);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                $orders = $result->fetch_all(MYSQLI_ASSOC);
-                echo json_encode($orders);
-                break;
-            }
-            break;
+        
 
         default:
             echo json_encode(["status"=>"error","message"=>"不支持的请求方法"]);
