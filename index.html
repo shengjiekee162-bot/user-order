@@ -3,12 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <title>示例商城 🛍️</title>
-  <!-- 响应式视窗 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #fafafa; margin:0; display:flex; }
-.sidebar { width:300px; padding:15px; border-left:1px solid #eee; background:#fff; height:100vh; box-shadow:-2px 0 5px rgba(0,0,0,0.05); }
-main { flex:1; padding:20px; }
+<link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#f53d2d">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="animations.css">
+<style> 
+:root {
+  /* 颜色系统 */
+  --color-primary: #f53d2d;
+  --color-primary-light: #ff6b6b;
+  --color-secondary: #4CAF50;
+  --color-text: #2c3e50;
+ 
 header { background: #f53d2d; color: white; display:flex; justify-content:space-between; align-items:center; padding:10px 15px; margin-bottom:10px; }
 header h1 { margin:0; font-size:20px; }
 header .user { font-size:14px; }
@@ -18,9 +24,29 @@ header .user { font-size:14px; }
 .categories { display:flex; margin-bottom:10px; }
 .categories button { margin-right:5px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; background:#eee; }
 .products { display:flex; flex-wrap:wrap; }
-.card { background:white; width:150px; margin:5px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow:hidden; text-align:center; transition:transform 0.2s; padding:10px; }
-.card:hover { transform:scale(1.05); }
-.card h4 { margin:5px 0; font-size:14px; }
+.card {
+  background: var(--color-surface);
+  width: 150px;
+  margin: var(--space-xs);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  text-align: center;
+  padding: var(--space-md);
+  transform-origin: center bottom;
+  transition: all var(--transition-normal);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.card h4 {
+  margin: var(--space-xs) 0;
+  font-size: 14px;
+  color: var(--color-text);
+}
 .card button { width:100%; border:none; background:#f53d2d; color:white; padding:6px; cursor:pointer; }
 .cart { margin-top:10px; padding:10px; background:#f53d2d; color:white; border-radius:5px; cursor:pointer; text-align:center; }
 .form-group { margin-bottom:10px; }
@@ -77,6 +103,7 @@ header .user { font-size:14px; }
 .sidebar.mobile-hidden { transform:translateX(100%); }
 
 .mobile-sidebar-btn { display:none; background:#fff; color:#f53d2d; border:none; padding:6px 8px; border-radius:4px; cursor:pointer; margin-right:8px; }
+}
 </style>
 </style>
 </head>
@@ -84,7 +111,7 @@ header .user { font-size:14px; }
 
 <main>
 <header>
-  <h1>示例商城 🛒</h1>
+  <h1>时尚商城 🛒</h1>
   <div style="display:flex; align-items:center; gap:8px;">
     <button class="mobile-sidebar-btn" onclick="toggleSidebarMobile()" aria-label="打开侧边栏">☰</button>
     <div class="user" id="userDisplay">未登录</div>
@@ -97,10 +124,10 @@ header .user { font-size:14px; }
 </div>
 
 <div class="categories">
-  <button onclick="filterCategory('')">全部</button>
-  <button onclick="filterCategory('电子产品')">电子产品</button>
-  <button onclick="filterCategory('配件')">配件</button>
-  <button onclick="filterCategory('生活用品')">生活用品</button>
+  <button onclick="filterCategory('')" class="category-btn">全部</button>
+  <button onclick="filterCategory('电子产品')" class="category-btn">电子产品</button>
+  <button onclick="filterCategory('配件')" class="category-btn">配件</button>
+  <button onclick="filterCategory('生活用品')" class="category-btn">生活用品</button>
 </div>
 
 <div class="products" id="productContainer"></div>
@@ -225,7 +252,7 @@ header .user { font-size:14px; }
 </main>
 
 <div class="sidebar">
-  <h4>卖家功能</h4>
+  <h4>卖家中心</h4>
   <div class="form-group">
     <input type="text" id="productName" placeholder="商品名称">
   </div>
