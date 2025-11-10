@@ -56,10 +56,40 @@ try {
                 echo json_encode(['order' => $order, 'items' => $items]);
                 break;
             }
-            // 获取商品
+            // 获取单个商品详情
+            if(isset($_GET['action']) && $_GET['action'] === 'get_product' && isset($_GET['id'])) {
+                $product_id = intval($_GET['id']);
+                $stmt = $conn->prepare("SELECT * FROM products WHERE id = ? LIMIT 1");
+                $stmt->bind_param("i", $product_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $product = $result->fetch_assoc();
+                echo json_encode($product);
+                break;
+            }
+
+            // 获取卖家的商品列表
+            if(isset($_GET['action']) && $_GET['action'] === 'my_products' && isset($_GET['seller_id'])) {
+                $seller_id = intval($_GET['seller_id']);
+                $sql = "SELECT p.*, c.name AS category_name 
+                       FROM products p 
+                       LEFT JOIN categories c ON p.category_id = c.id 
+                       WHERE p.seller_id = ?
+                       ORDER BY p.id DESC";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("i", $seller_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                echo json_encode($result->fetch_all(MYSQLI_ASSOC));
+                break;
+            }
+
+            // 获取所有商品
             $category = isset($_GET['category']) ? $_GET['category'] : '';
             $keyword = isset($_GET['search']) ? $_GET['search'] : '';
+            
             $sql = "SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON p.category_id=c.id WHERE 1";
+            
             if($category){
                 $category_safe = $conn->real_escape_string($category);
                 $sql .= " AND c.name LIKE '%$category_safe%'";
@@ -68,6 +98,7 @@ try {
                 $keyword_safe = $conn->real_escape_string($keyword);
                 $sql .= " AND p.name LIKE '%$keyword_safe%'";
             }
+            
             $res = $conn->query($sql);
             if(!$res) throw new Exception($conn->error);
             echo json_encode($res->fetch_all(MYSQLI_ASSOC));
@@ -146,6 +177,64 @@ try {
                 $stmt->bind_param("sdiiss",$name,$price,$category_id,$seller_id,$image,$description);
                 $stmt->execute();
                 echo json_encode(["status"=>"ok","message"=>"商品添加成功","product_id"=>$stmt->insert_id]);
+            }
+            // 卖家更新商品
+            else if($data['action'] === "update_product"){
+                if(!isset($data['id'], $data['name'], $data['price'], $data['category_id'], $data['seller_id']))
+                    throw new Exception("缺少参数");
+
+                $id = intval($data['id']);
+                $name = $data['name'];
+                $price = floatval($data['price']);
+                $category_id = intval($data['category_id']);
+                $seller_id = intval($data['seller_id']);
+                $description = isset($data['description']) ? $data['description'] : '';
+
+                // 验证商品属于该卖家
+                $stmt = $conn->prepare("SELECT seller_id FROM products WHERE id = ? LIMIT 1");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $product = $result->fetch_assoc();
+                
+                if(!$product || $product['seller_id'] != $seller_id) {
+                    throw new Exception("无权修改此商品");
+                }
+
+                $stmt = $conn->prepare("UPDATE products SET name=?, price=?, category_id=?, description=? WHERE id=? AND seller_id=?");
+                $stmt->bind_param("sdisii", $name, $price, $category_id, $description, $id, $seller_id);
+                if($stmt->execute()) {
+                    echo json_encode(["status"=>"ok","message"=>"商品更新成功"]);
+                } else {
+                    throw new Exception("更新失败");
+                }
+            }
+            // 卖家删除商品
+            else if($data['action'] === "delete_product"){
+                if(!isset($data['id'], $data['seller_id']))
+                    throw new Exception("缺少参数");
+
+                $id = intval($data['id']);
+                $seller_id = intval($data['seller_id']);
+
+                // 验证商品属于该卖家
+                $stmt = $conn->prepare("SELECT seller_id FROM products WHERE id = ? LIMIT 1");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $product = $result->fetch_assoc();
+                
+                if(!$product || $product['seller_id'] != $seller_id) {
+                    throw new Exception("无权删除此商品");
+                }
+
+                $stmt = $conn->prepare("DELETE FROM products WHERE id=? AND seller_id=?");
+                $stmt->bind_param("ii", $id, $seller_id);
+                if($stmt->execute()) {
+                    echo json_encode(["status"=>"ok","message"=>"商品删除成功"]);
+                } else {
+                    throw new Exception("删除失败");
+                }
             }
             else{
                 throw new Exception("未知动作");

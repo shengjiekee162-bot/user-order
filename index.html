@@ -224,32 +224,41 @@ header .user { font-size:14px; }
 
 </main>
 
-<div class="sidebar">
+  <div class="sidebar">
   <h4>卖家功能</h4>
-  <div class="form-group">
-    <input type="text" id="productName" placeholder="商品名称">
-  </div>
-  <div class="form-group">
-    <input type="number" id="productPrice" placeholder="价格">
-  </div>
-  <div class="form-group">
-    <select id="productCategory" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">
-      <option value="">请选择分类</option>
-      <option value="1">电子产品</option>
-      <option value="2">配件</option>
-      <option value="3">生活用品</option>
-    </select>
+  <!-- 添加商品表单 -->
+  <div id="productForm">
+    <div class="form-group">
+      <input type="text" id="productName" placeholder="商品名称">
+    </div>
+    <div class="form-group">
+      <input type="number" id="productPrice" placeholder="价格">
+    </div>
+    <div class="form-group">
+      <select id="productCategory" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">
+        <option value="">请选择分类</option>
+        <option value="1">电子产品</option>
+        <option value="2">配件</option>
+        <option value="3">生活用品</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <input type="text" id="productDesc" placeholder="描述">
+    </div>
+    <div class="form-group">
+      <button onclick="addProduct()" id="submitProductBtn">添加商品</button>
+      <button onclick="cancelEdit()" id="cancelEditBtn" style="display:none; background:#666;">取消</button>
+    </div>
   </div>
 
-  <div class="form-group">
-    <input type="text" id="productDesc" placeholder="描述">
+  <!-- 我的商品列表 -->
+  <div id="myProducts" style="margin-top:20px;">
+    <h4>我的商品</h4>
+    <div id="productsList" style="max-height:400px; overflow-y:auto;">
+      <!-- 商品列表将通过 JS 动态加载 -->
+    </div>
   </div>
-  <div class="form-group">
-    <button onclick="addProduct()">添加商品</button>
-  </div>
-</div>
-
-<script>
+</div><script>
 let cart = [];
 let currentUser = JSON.parse(localStorage.getItem("user")) || null;
 let currentCategory = '';
@@ -332,6 +341,8 @@ async function safeFetch(url, options){
   } catch(err){ alert("网络请求失败:"+err.message); return null;}
 }
 
+let editingProductId = null;
+
 async function loadProducts(){
   const data = await safeFetch(`api.php?category=${encodeURIComponent(currentCategory)}&search=${encodeURIComponent(currentKeyword)}`);
   if(!data) return;
@@ -342,10 +353,136 @@ async function loadProducts(){
       <div class="card">
         <h4>${p.name}</h4>
         <p>RM ${p.price}</p>
-        <button onclick='addToCart(${JSON.stringify(p)})'>加入购物车</button>
+        ${currentUser?.role === 'buyer' ? 
+          `<button onclick='addToCart(${JSON.stringify(p)})'>加入购物车</button>` :
+          (currentUser?.id === p.seller_id ? 
+            `<div style="display:flex;gap:5px;">
+              <button onclick="editProduct(${p.id})" style="flex:1;background:#4CAF50">编辑</button>
+              <button onclick="deleteProduct(${p.id})" style="flex:1;background:#f44336">删除</button>
+             </div>` : 
+            ''
+          )
+        }
       </div>
     `;
   });
+  
+  // 如果是卖家，加载我的商品列表
+  if(currentUser && currentUser.role === 'seller') {
+    await loadMyProducts();
+  }
+}
+
+// 加载卖家的商品列表
+async function loadMyProducts() {
+  if (!currentUser || currentUser.role !== 'seller') return;
+  const data = await safeFetch(`api.php?action=my_products&seller_id=${currentUser.id}`);
+  if (!data) return;
+  
+  const container = document.getElementById('productsList');
+  if (!container) return;
+  
+  container.innerHTML = data.length ? data.map(p => `
+    <div class="product-item" style="background:#fff; padding:10px; margin-bottom:10px; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <div style="margin-bottom:5px;">
+        <strong>${escapeHtml(p.name)}</strong>
+        <span style="float:right">RM ${parseFloat(p.price).toFixed(2)}</span>
+      </div>
+      <div style="color:#666; font-size:0.9em; margin-bottom:5px;">${escapeHtml(p.description || '')}</div>
+      <div style="text-align:right;">
+        <button onclick="editProduct(${p.id})" style="background:#4CAF50; padding:4px 8px; border:none; border-radius:4px; color:white; margin-right:5px;">编辑</button>
+        <button onclick="deleteProduct(${p.id})" style="background:#f44336; padding:4px 8px; border:none; border-radius:4px; color:white;">删除</button>
+      </div>
+    </div>
+  `).join('') : '<p style="text-align:center; color:#666;">暂无商品</p>';
+}
+
+// 开始编辑商品
+async function editProduct(productId) {
+  const product = await safeFetch(`api.php?action=get_product&id=${productId}`);
+  if (!product) return;
+  
+  editingProductId = productId;
+  document.getElementById('productName').value = product.name || '';
+  document.getElementById('productPrice').value = product.price || '';
+  document.getElementById('productCategory').value = product.category_id || '';
+  document.getElementById('productDesc').value = product.description || '';
+  
+  // 更改按钮文字和显示状态
+  document.getElementById('submitProductBtn').textContent = '保存修改';
+  document.getElementById('cancelEditBtn').style.display = 'block';
+  
+  // 滚动到表单顶部
+  document.getElementById('productForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+// 取消编辑
+function cancelEdit() {
+  editingProductId = null;
+  document.getElementById('productName').value = '';
+  document.getElementById('productPrice').value = '';
+  document.getElementById('productCategory').value = '';
+  document.getElementById('productDesc').value = '';
+  document.getElementById('submitProductBtn').textContent = '添加商品';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+}
+
+// 添加或更新商品
+async function addProduct(){
+  if(!currentUser || currentUser.role!=="seller") return alert("请使用卖家账号登录！");
+  const name = document.getElementById('productName').value.trim();
+  const price = parseFloat(document.getElementById('productPrice').value);
+  const category_id = parseInt(document.getElementById('productCategory').value);
+  const description = document.getElementById('productDesc').value.trim();
+  if(!name||!price||!category_id) return alert("请填写完整信息");
+
+  const action = editingProductId ? "update_product" : "add_product";
+  const productData = {
+    action,
+    name,
+    price,
+    category_id,
+    seller_id: currentUser.id,
+    description
+  };
+  
+  if (editingProductId) {
+    productData.id = editingProductId;
+  }
+
+  const msg = await safeFetch("api.php", {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(productData)
+  });
+  
+  if(!msg) return;
+  alert(msg.message);
+  if(msg.status==="ok"){
+    cancelEdit(); // 清空表单
+    loadProducts(); // 重新加载商品列表
+  }
+}
+
+// 删除商品
+async function deleteProduct(productId) {
+  if (!confirm('确定要删除这个商品吗？')) return;
+  
+  const msg = await safeFetch("api.php", {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      action: "delete_product",
+      id: productId,
+      seller_id: currentUser.id
+    })
+  });
+  
+  if (!msg) return;
+  alert(msg.message);
+  if (msg.status === "ok") {
+    loadProducts(); // 重新加载商品列表
+  }
 }
 
 function addToCart(p){
@@ -380,7 +517,7 @@ function renderOrderSummary(){
 function escapeHtml(str){
   if(!str) return '';
   return String(str).replace(/[&<>"']/g, function(s){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s];
+    return {'&':'&a mp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s];
   });
 }
 
