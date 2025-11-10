@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#f53d2d">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="animations.css">
+<link rel="stylesheet" href="components.css">
+<script src="animations.js" defer></script>
 <style> 
 :root {
   /* 颜色系统 */
@@ -124,15 +126,15 @@ header .user { font-size:14px; }
 </div>
 
 <div class="categories">
-  <button onclick="filterCategory('')" class="category-btn">全部</button>
+  <h4>卖家中心</h4>
   <button onclick="filterCategory('电子产品')" class="category-btn">电子产品</button>
-  <button onclick="filterCategory('配件')" class="category-btn">配件</button>
+    <input type="text" id="productName" placeholder="商品名称" class="fade-in">
   <button onclick="filterCategory('生活用品')" class="category-btn">生活用品</button>
 </div>
-
+    <input type="number" id="productPrice" placeholder="价格" class="fade-in">
 <div class="products" id="productContainer"></div>
 
-  <div style="display:flex; gap:10px;">
+    <select id="productCategory" class="fade-in">
   <div class="cart" onclick="toggleCheckoutForm()">🛒 购物车 (<span id="count">0</span>)</div>
   <div class="cart"><a href="orders.html" style="color:white; text-decoration:none; display:block;">📦 我的订单</a></div>
   </div>
@@ -141,10 +143,10 @@ header .user { font-size:14px; }
 <div id="checkoutModal" class="modal" style="display:none;">
   <div class="modal-content">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <h3>结账 & 支付</h3>
+    <input type="text" id="productDesc" placeholder="描述" class="fade-in">
       <div>
         <span style="margin-right:10px; color:#666">当前用户: <b id="checkoutUser">未登录</b></span>
-        <button onclick="showCheckoutTab()" style="background:#fff; border:1px solid #ddd; padding:6px 8px; border-radius:4px; margin-right:6px;">结账</button>
+    <button onclick="addProduct()" class="btn-ripple shine">添加商品</button>
         <button onclick="showOrdersTab()" style="background:#fff; border:1px solid #ddd; padding:6px 8px; border-radius:4px; margin-right:6px;">我的订单</button>
         <button onclick="toggleCheckoutForm()" style="background:#ddd; border:none; padding:6px 8px; border-radius:4px;">关闭</button>
       </div>
@@ -184,7 +186,7 @@ header .user { font-size:14px; }
           <div class="payment-option" onclick="selectPayment('cash')">
             <input type="radio" name="payment" value="cash" id="pay_cash" checked>
             <label for="pay_cash">
-              <span class="icon">💵</span>
+              <span class="icon shine">💵</span>
               <span class="text">现金支付</span>
               <span class="desc">货到付款</span>
             </label>
@@ -192,7 +194,7 @@ header .user { font-size:14px; }
           <div class="payment-option" onclick="selectPayment('credit_card')">
             <input type="radio" name="payment" value="credit_card" id="pay_card">
             <label for="pay_card">
-              <span class="icon">💳</span>
+              <span class="icon shine">💳</span>
               <span class="text">信用卡</span>
               <span class="desc">支持 Visa / Mastercard</span>
             </label>
@@ -200,7 +202,7 @@ header .user { font-size:14px; }
           <div class="payment-option" onclick="selectPayment('online_banking')">
             <input type="radio" name="payment" value="online_banking" id="pay_bank">
             <label for="pay_bank">
-              <span class="icon">🏦</span>
+              <span class="icon shine">🏦</span>
               <span class="text">网上银行</span>
               <span class="desc">支持所有大马银行</span>
             </label>
@@ -358,18 +360,40 @@ async function safeFetch(url, options){
     try { return JSON.parse(text);} catch { alert("返回非JSON"); return null;}
   } catch(err){ alert("网络请求失败:"+err.message); return null;}
 }
+// Toast 消息函数
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+
+// 加载遮罩控制
+function showLoading() {
+  document.getElementById('loadingMask').style.display = 'flex';
+}
+
+function hideLoading() {
+  document.getElementById('loadingMask').style.display = 'none';
+}
 
 async function loadProducts(){
+  showLoading();
   const data = await safeFetch(`api.php?category=${encodeURIComponent(currentCategory)}&search=${encodeURIComponent(currentKeyword)}`);
+  hideLoading();
   if(!data) return;
   const container = document.getElementById('productContainer');
   container.innerHTML = '';
   data.forEach(p=>{
     container.innerHTML += `
-      <div class="card">
+      <div class="card card-hover">
         <h4>${p.name}</h4>
         <p>RM ${p.price}</p>
-        <button onclick='addToCart(${JSON.stringify(p)})'>加入购物车</button>
+        <button onclick='addToCart(${JSON.stringify(p)})' class="btn-ripple" data-tooltip="点击加入购物车">加入购物车</button>
       </div>
     `;
   });
@@ -686,3 +710,10 @@ function toggleSidebarMobile(){
 
 </body>
 </html>
+<!-- 加载遮罩 -->
+<div class="loading-mask" id="loadingMask" style="display: none;">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- Toast 消息容器 -->
+<div id="toastContainer"></div>
