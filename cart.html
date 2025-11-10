@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>购物车 - 时尚商城</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="components.css">
+  <link rel="stylesheet" href="animations.css">
+  <script src="animations.js" defer></script>
+  <script src="cart.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1><a href="index.html" style="color:inherit; text-decoration:none;">时尚商城</a></h1>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div id="userDisplay">未登录</div>
+      </div>
+    </header>
+
+    <section style="padding:20px; max-width:1000px; margin:0 auto;">
+      <h2>购物车</h2>
+      <div id="cartContainer"></div>
+
+      <div style="margin-top:16px; display:flex; gap:10px;">
+        <button id="continueBtn" onclick="location.href='index.html'" class="btn-ripple">继续购物</button>
+        <button id="checkoutBtn" class="btn-ripple" style="background:var(--color-primary); color:white;">去结账</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- 全局遮罩/Toast 会由 animations.js 管理（如果已加载） -->
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>结账 - 时尚商城</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="components.css">
+  <link rel="stylesheet" href="animations.css">
+  <script src="animations.js" defer></script>
+  <script src="checkout.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1><a href="index.html" style="color:inherit; text-decoration:none;">时尚商城</a></h1>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div id="userDisplay">未登录</div>
+      </div>
+    </header>
+
+    <section style="padding:20px; max-width:1100px; margin:0 auto;">
+      <h2>结账 & 支付</h2>
+
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:320px;">
+          <h4>收件地址</h4>
+          <div id="addressArea">
+            <select id="addressSelect" style="width:100%; padding:8px;" ></select>
+            <div style="margin-top:8px;"><button onclick="showAddAddressForm()" class="btn-ripple">添加新地址</button></div>
+            <div id="addAddressForm" style="display:none; margin-top:8px;">
+              <input id="newRecipientName" placeholder="收件人姓名" style="width:100%; margin-bottom:6px; padding:8px;">
+              <input id="newRecipientAddress" placeholder="收货地址" style="width:100%; margin-bottom:6px; padding:8px;">
+              <div style="display:flex; gap:8px;"><button onclick="addAddress()" class="btn-ripple" style="background:var(--color-primary); color:white;">保存</button>
+              <button onclick="hideAddAddressForm()" class="btn-ripple">取消</button></div>
+            </div>
+          </div>
+
+          <h4 style="margin-top:16px;">支付方式</h4>
+          <div id="paymentMethods"></div>
+
+        </div>
+
+        <div style="width:360px;">
+          <h4>订单摘要</h4>
+          <div id="orderSummaryBody" style="background:#fbfbfb; padding:12px; border-radius:8px;">
+            <!-- JS 填充 -->
+          </div>
+
+          <div style="margin-top:12px;">
+            <button id="submitOrderBtn" class="btn-ripple" style="width:100%; background:var(--color-primary); color:white; padding:12px;">确认下单</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
