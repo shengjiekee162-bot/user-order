@@ -302,10 +302,17 @@ function showUser() {
     html += `<button onclick="switchRole()" style="background:#fff; color:#f53d2d; border:none; padding:3px 8px; border-radius:4px; cursor:pointer">
       切换为${currentUser.role === 'buyer' ? '卖家' : '买家'}
     </button>`;
+    html += `<button onclick="logout()" style="background:#fff; color:#f53d2d; border:none; padding:3px 8px; border-radius:4px; cursor:pointer; margin-left:6px;">退出登录</button>`;
     userDiv.innerHTML = html;
   } else {
     userDiv.innerHTML = `<a href="login.html" style="color:white;">登录 / 注册</a>`;
   }
+}
+
+// 退出登录：清除 localStorage 并跳转到登录页
+function logout(){
+  localStorage.removeItem('user');
+  window.location.href = 'login.html';
 }
 
 async function safeFetch(url, options){
