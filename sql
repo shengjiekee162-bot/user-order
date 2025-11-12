@@ -1,8 +1,8 @@
--- Create database with proper character set
+-- Create database
 CREATE DATABASE IF NOT EXISTS shopee_clone CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE shopee_clone;
 
--- Create users table
+-- Users
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
@@ -11,13 +11,13 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create categories table
+-- Categories
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE
 );
 
--- Create products table
+-- Products
 CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -31,18 +31,20 @@ CREATE TABLE IF NOT EXISTS products (
     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Create orders table
+-- Orders
 CREATE TABLE IF NOT EXISTS orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     total_price DECIMAL(12,2) NOT NULL,
     recipient_name VARCHAR(255) NOT NULL,
     recipient_address TEXT NOT NULL,
+    payment_method ENUM('cash', 'credit_card', 'online_banking') NOT NULL DEFAULT 'cash',
+    payment_status ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Create order_items table
+-- Order items
 CREATE TABLE IF NOT EXISTS order_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
@@ -52,18 +54,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
 );
 
--- Insert default categories
-INSERT INTO categories (name) VALUES 
-    ('电子产品'),
-    ('配件'),
-    ('生活用品');
-    
-    -- 在 orders 表中添加支付方式字段
-ALTER TABLE orders 
-ADD COLUMN payment_method ENUM('cash', 'credit_card', 'online_banking') NOT NULL DEFAULT 'cash',
-ADD COLUMN payment_status ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending';
-
--- 用户地址表
+-- Addresses
 CREATE TABLE IF NOT EXISTS addresses (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -74,5 +65,13 @@ CREATE TABLE IF NOT EXISTS addresses (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 用户表增加默认地址字段（可选，推荐直接查 addresses 表 is_default=1）
--- ALTER TABLE users ADD COLUMN default_address_id INT DEFAULT NULL;
+-- Default categories
+INSERT INTO categories (name)
+SELECT * FROM (SELECT '电子产品') AS tmp
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='电子产品');
+INSERT INTO categories (name)
+SELECT * FROM (SELECT '配件') AS tmp
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='配件');
+INSERT INTO categories (name)
+SELECT * FROM (SELECT '生活用品') AS tmp
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='生活用品');

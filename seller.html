@@ -1,45 +1,790 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>卖家后台 - 上传商品</title>
+<title>卖家中心 - 产品管理</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family: Arial; background:#f7f7f7; padding:40px; }
-input,select,textarea { display:block; margin:10px 0; width:300px; padding:8px; }
-button { background:#f53d2d; color:white; border:none; padding:10px; width:150px; cursor:pointer; }
+body { 
+  font-family: 'Segoe UI', Arial, sans-serif; 
+  background: #f5f5f5; 
+  margin: 0; 
+  padding: 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  background: #f53d2d;
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+header .user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+header .user-info button {
+  background: white;
+  color: #f53d2d;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+header .user-info button:hover {
+  background: #fce4e0;
+}
+
+.main-content {
+  display: flex;
+  gap: 20px;
+}
+
+.sidebar {
+  width: 300px;
+}
+
+.form-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.form-card h2 {
+  margin-top: 0;
+  color: #f53d2d;
+  font-size: 20px;
+  border-bottom: 2px solid #f53d2d;
+  padding-bottom: 10px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #f53d2d;
+  box-shadow: 0 0 5px rgba(245, 61, 45, 0.3);
+}
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: #f53d2d;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #d42828;
+}
+
+.btn-secondary {
+  background: #ddd;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #bbb;
+}
+
+.content {
+  flex: 1;
+}
+
+.products-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.products-card h2 {
+  margin-top: 0;
+  color: #f53d2d;
+  font-size: 20px;
+  border-bottom: 2px solid #f53d2d;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.product-item {
+  background: #f9f9f9;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border-left: 4px solid #f53d2d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-info {
+  flex: 1;
+}
+
+.product-info h3 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.product-info p {
+  margin: 3px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.product-price {
+  font-size: 18px;
+  font-weight: bold;
+  color: #f53d2d;
+  margin: 5px 0;
+}
+
+.product-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.product-actions button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-edit {
+  background: #4CAF50;
+  color: white;
+}
+
+.btn-edit:hover {
+  background: #45a049;
+}
+
+.btn-delete {
+  background: #f44336;
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #da190b;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
+.empty-state svg {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 15px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+  }
+  
+  .product-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .product-actions {
+    width: 100%;
+  }
+  
+  .product-actions button {
+    flex: 1;
+  }
+}
+
+.alert {
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  display: none;
+}
+
+.alert.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  display: block;
+}
+
+.alert.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  display: block;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.stat-label {
+  color: #999;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #f53d2d;
+}
+
+.nav-links {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+.nav-links a {
+  display: block;
+  padding: 10px;
+  margin-bottom: 5px;
+  background: white;
+  text-decoration: none;
+  color: #f53d2d;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.nav-links a:hover {
+  background: #f53d2d;
+  color: white;
+}
 </style>
 </head>
 <body>
-<h2>📦 上传新商品</h2>
-<form id="productForm">
-  <input type="text" id="name" placeholder="商品名称" required>
-  <input type="number" step="0.01" id="price" placeholder="价格" required>
-  <select id="category">
-    <option value="1">电子产品</option>
-    <option value="2">配件</option>
-    <option value="3">生活用品</option>
-  </select>
-  <textarea id="desc" placeholder="商品描述"></textarea>
-  <input type="text" id="image" placeholder="图片路径，如 images/xxx.jpg">
-  <input type="number" id="seller" placeholder="卖家ID">
-  <button type="submit">上传商品</button>
-</form>
+
+<header>
+  <h1>🏪 卖家中心</h1>
+  <div class="user-info">
+    <span id="userDisplay">未登录</span>
+    <button onclick="logout()">退出登录</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="main-content">
+    <!-- 左侧边栏 - 添加产品表单 -->
+    <div class="sidebar">
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">商品总数</div>
+          <div class="stat-value" id="totalProducts">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">总销售额</div>
+          <div class="stat-value" id="totalSales">RM 0</div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <h2 id="formTitle">➕ 添加商品</h2>
+        
+        <div id="alert" class="alert"></div>
+
+        <div class="form-group">
+          <label for="productName">商品名称 *</label>
+          <input type="text" id="productName" placeholder="输入商品名称" required>
+        </div>
+
+        <div class="form-group">
+          <label for="productPrice">价格 (RM) *</label>
+          <input type="number" id="productPrice" placeholder="输入价格" step="0.01" min="0" required>
+        </div>
+
+        <div class="form-group">
+          <label for="productCategory">分类 *</label>
+          <select id="productCategory" required>
+            <option value="">请选择分类</option>
+            <option value="1">电子产品</option>
+            <option value="2">配件</option>
+            <option value="3">生活用品</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="productDesc">商品描述</label>
+          <textarea id="productDesc" placeholder="输入商品描述（可选）"></textarea>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="addOrUpdateProduct()" id="submitBtn">添加商品</button>
+          <button class="btn btn-secondary" onclick="cancelEdit()" id="cancelBtn" style="display:none;">取消编辑</button>
+        </div>
+      </div>
+
+      <div class="nav-links">
+        <a href="index.html">🏠 返回首页</a>
+        <a href="orders.html">📦 查看订单</a>
+      </div>
+    </div>
+
+    <!-- 右侧主内容 - 商品列表 -->
+    <div class="content">
+      <div class="products-card">
+        <h2>📦 我的商品</h2>
+        <div style="margin-bottom:12px; text-align:right;">
+          <!-- Bulk claim removed: single-item claim remains -->
+        </div>
+        <div id="productsList"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-document.getElementById("productForm").onsubmit = async e=>{
-  e.preventDefault();
-  const data = {
-    name: name.value,
-    price: price.value,
-    category_id: category.value,
-    description: desc.value,
-    image: image.value,
-    seller_id: seller.value
+let currentUser = JSON.parse(localStorage.getItem("user")) || null;
+let editingProductId = null;
+let allProducts = [];
+
+// 检查用户登录状态
+function checkLogin() {
+  if (!currentUser) {
+    alert('请先登录卖家账号');
+    window.location.href = 'login.html';
+    return false;
+  }
+  if (currentUser.role !== 'seller') {
+    alert('此页面仅限卖家访问');
+    window.location.href = 'index.html';
+    return false;
+  }
+  return true;
+}
+
+// 显示用户信息
+function showUser() {
+  const userDiv = document.getElementById('userDisplay');
+  if (currentUser) {
+    userDiv.innerHTML = `欢迎回来，<b>${currentUser.username}</b>`;
+  }
+}
+
+// 退出登录
+function logout() {
+  localStorage.removeItem("user");
+  window.location.href = 'login.html';
+}
+
+// 安全的网络请求
+async function safeFetch(url, options) {
+  try {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      console.error("返回非JSON:", text);
+      return null;
+    }
+  } catch (err) {
+    console.error("网络请求失败:", err.message);
+    showAlert('网络请求失败: ' + err.message, 'error');
+    return null;
+  }
+}
+
+// 显示提示信息
+function showAlert(message, type = 'success') {
+  const alert = document.getElementById('alert');
+  alert.textContent = message;
+  alert.className = 'alert ' + type;
+  if (type === 'success') {
+    setTimeout(() => {
+      alert.style.display = 'none';
+    }, 3000);
+  }
+}
+
+// 转义HTML
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, function(s) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s];
+  });
+}
+
+// 加载卖家的商品列表
+async function loadMyProducts() {
+  if (!currentUser) return;
+  
+  const data = await safeFetch(`api.php?action=my_products&seller_id=${currentUser.id}`);
+  if (!data) {
+    document.getElementById('productsList').innerHTML = '<p style="text-align:center; color:#999;">加载失败</p>';
+    return;
+  }
+
+  allProducts = Array.isArray(data) ? data : [];
+  
+  const container = document.getElementById('productsList');
+  
+  if (allProducts.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div>📭</div>
+        <p>暂无商品，去添加您的第一个商品吧！</p>
+      </div>
+    `;
+  } else {
+    // 使用 renderProductHTML 生成每个条目，便于后续局部替换
+    container.innerHTML = allProducts.map(p => renderProductHTML(p)).join('');
+  }
+  
+  // 更新统计信息
+  document.getElementById('totalProducts').textContent = allProducts.length;
+}
+
+// 开始编辑商品
+async function editProduct(productId) {
+  const product = await safeFetch(`api.php?action=get_product&id=${productId}`);
+  if (!product) return;
+  
+  editingProductId = productId;
+  document.getElementById('productName').value = product.name || '';
+  document.getElementById('productPrice').value = product.price || '';
+  document.getElementById('productCategory').value = product.category_id || '';
+  document.getElementById('productDesc').value = product.description || '';
+  
+  // 更改按钮状态
+  document.getElementById('formTitle').textContent = '✏️ 编辑商品';
+  document.getElementById('submitBtn').textContent = '保存修改';
+  document.getElementById('cancelBtn').style.display = 'block';
+  
+  // 滚动到表单
+  document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+// 取消编辑
+function cancelEdit() {
+  editingProductId = null;
+  document.getElementById('productName').value = '';
+  document.getElementById('productPrice').value = '';
+  document.getElementById('productCategory').value = '';
+  document.getElementById('productDesc').value = '';
+  
+  document.getElementById('formTitle').textContent = '➕ 添加商品';
+  document.getElementById('submitBtn').textContent = '添加商品';
+  document.getElementById('cancelBtn').style.display = 'none';
+  
+  document.getElementById('alert').style.display = 'none';
+}
+
+// 添加或更新商品
+async function addOrUpdateProduct() {
+  const name = document.getElementById('productName').value.trim();
+  const price = parseFloat(document.getElementById('productPrice').value);
+  const category_id = parseInt(document.getElementById('productCategory').value);
+  const description = document.getElementById('productDesc').value.trim();
+
+  if (!name || !price || !category_id) {
+    showAlert('请填写必填项：商品名称、价格、分类', 'error');
+    return;
+  }
+
+  if (price <= 0) {
+    showAlert('价格必须大于0', 'error');
+    return;
+  }
+
+  const action = editingProductId ? "update_product" : "add_product";
+  const productData = {
+    action,
+    name,
+    price,
+    category_id,
+    seller_id: currentUser.id,
+    description
   };
-  const res = await fetch("upload.php",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-  const msg = await res.json();
-  alert(msg.message);
-};
+
+  if (editingProductId) {
+    productData.id = editingProductId;
+  }
+  const submitBtn = document.getElementById('submitBtn');
+  const origText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = editingProductId ? '保存中...' : '添加中...';
+
+  const msg = await safeFetch("api.php", {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(productData)
+  });
+
+  submitBtn.disabled = false;
+  submitBtn.innerHTML = origText;
+
+  if (!msg) return;
+
+  if (msg.status === "ok") {
+    showAlert(editingProductId ? '✓ 商品已更新' : '✓ 商品已添加', 'success');
+    // 获取最新商品并局部替换/插入
+    const idToFetch = msg.product_id ? msg.product_id : (productData.id || editingProductId);
+    if (idToFetch) {
+      const prod = await safeFetch(`api.php?action=get_product&id=${idToFetch}`);
+      if (prod && prod.id) replaceOrInsertProduct(prod);
+    } else {
+      await loadMyProducts();
+    }
+    cancelEdit();
+  } else {
+    showAlert(msg.message || '操作失败', 'error');
+  }
+}
+
+// 删除商品
+async function deleteProduct(productId) {
+  if (!confirm('确定要删除这个商品吗？此操作不可撤销。')) return;
+  const btnId = `btn-delete-${productId}`;
+  setButtonLoading(btnId, true, '删除中...');
+  const msg = await safeFetch("api.php", {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ action: "delete_product", id: productId, seller_id: currentUser.id })
+  });
+  setButtonLoading(btnId, false);
+  if (!msg) return;
+  if (msg.status === "ok") {
+    showAlert('✓ 商品已删除', 'success');
+    const el = document.getElementById(`prod-${productId}`);
+    if (el) el.remove();
+    updateTotalCount();
+    // 刷新统计
+    loadSellerStats();
+  } else {
+    showAlert(msg.message || '删除失败', 'error');
+  }
+}
+
+// 认领商品（将 seller_id 设为当前卖家）
+async function claimProduct(productId) {
+  if (!confirm('确定要认领此商品并将其归属为您的商品吗？')) return;
+  const btnId = `btn-claim-${productId}`;
+  setButtonLoading(btnId, true, '认领中...');
+  const msg = await safeFetch("api.php", {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ action: 'claim_product', id: productId, seller_id: currentUser.id })
+  });
+  setButtonLoading(btnId, false);
+  if (!msg) return;
+  if (msg.status === 'ok') {
+    showAlert('✓ 商品已认领', 'success');
+    const prod = await safeFetch(`api.php?action=get_product&id=${productId}`);
+    if (prod && prod.id) replaceOrInsertProduct(prod);
+  } else {
+    showAlert(msg.message || '认领失败', 'error');
+  }
+}
+
+// 强制认领（覆盖原有 seller_id，操作不可逆，需谨慎）
+async function forceClaimProduct(productId) {
+  if (!confirm('强制认领会把商品的原有归属覆盖。请确认您有权限并愿意承担后果。继续吗？')) return;
+  const btnId = `btn-force-${productId}`;
+  setButtonLoading(btnId, true, '处理中...');
+  const msg = await safeFetch("api.php", {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ action: 'force_claim_product', id: productId, seller_id: currentUser.id })
+  });
+  setButtonLoading(btnId, false);
+  if (!msg) return;
+  if (msg.status === 'ok') {
+    // optional: show old/new owner info if returned by backend
+    if (msg.old_owner) {
+      showAlert(`✓ 已强制认领（原归属: ${msg.old_owner} -> 新归属: ${msg.new_owner || currentUser.id}）`, 'success');
+    } else {
+      showAlert('✓ 已强制认领', 'success');
+    }
+    const prod = await safeFetch(`api.php?action=get_product&id=${productId}`);
+    if (prod && prod.id) replaceOrInsertProduct(prod);
+  } else {
+    showAlert(msg.message || '强制认领失败', 'error');
+  }
+}
+
+// Bulk claim removed by request. Use single-item '认领商品' (claimProduct) or '强制认领' for specific items.
+
+// 页面初始化
+document.addEventListener('DOMContentLoaded', function() {
+  if (!checkLogin()) return;
+  showUser();
+  // 加载商品并刷新统计信息
+  loadMyProducts().then(() => {
+    loadSellerStats();
+  });
+});
+
+// 加载卖家统计（商品总数、总销售额）
+async function loadSellerStats(){
+  if (!currentUser) return;
+  const res = await safeFetch(`api.php?action=seller_stats&seller_id=${currentUser.id}`);
+  if (!res) return;
+  const total = parseInt(res.total_products) || 0;
+  const sales = parseFloat(res.total_sales) || 0;
+  document.getElementById('totalProducts').textContent = total;
+  document.getElementById('totalSales').textContent = `RM ${sales.toFixed(2)}`;
+}
+
+// Helper: 渲染单个商品为 HTML（带唯一 id，便于局部替换）
+function renderProductHTML(p) {
+  const ownerNum = parseInt(p.seller_id) || 0;
+  const me = parseInt(currentUser.id) || 0;
+  let actions = '';
+  if (ownerNum === me) {
+    actions = `
+      <button id="btn-edit-${p.id}" class="btn-edit" onclick="editProduct(${p.id})">✏️ 编辑</button>
+      <button id="btn-delete-${p.id}" class="btn-delete" onclick="deleteProduct(${p.id})">🗑️ 删除</button>
+    `;
+  } else if (ownerNum === 0) {
+    actions = `<button id="btn-claim-${p.id}" class="btn-primary" onclick="claimProduct(${p.id})">🔖 认领商品</button>`;
+  } else {
+    // 商品属于其他卖家：显示归属并提供强制认领（谨慎操作）
+    actions = `
+      <span style="color:#999; font-size:13px; margin-right:8px;">归属卖家: ${ownerNum}</span>
+      <button id="btn-force-${p.id}" class="btn-secondary" onclick="forceClaimProduct(${p.id})">⚠️ 强制认领</button>
+    `;
+  }
+
+  return `
+  <div class="product-item" id="prod-${p.id}">
+    <div class="product-info">
+      <h3>${escapeHtml(p.name)}</h3>
+      <p>${escapeHtml(p.description || '暂无描述')}</p>
+      <div class="product-price">RM ${parseFloat(p.price).toFixed(2)}</div>
+      <div class="product-actions">
+        ${actions}
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+// Helper: 用新数据替换或插入商品元素
+function replaceOrInsertProduct(p) {
+  const container = document.getElementById('productsList');
+  const existing = document.getElementById(`prod-${p.id}`);
+  const html = renderProductHTML(p);
+  if (existing) {
+    existing.outerHTML = html;
+  } else {
+    container.insertAdjacentHTML('afterbegin', html);
+  }
+  updateTotalCount();
+  // 刷新统计（包括总销售额）
+  loadSellerStats();
+}
+
+// 更新统计数字（基于 DOM 元素数）
+function updateTotalCount() {
+  const count = document.querySelectorAll('#productsList .product-item').length;
+  document.getElementById('totalProducts').textContent = count;
+}
+
+// 设置按钮加载状态
+function setButtonLoading(btnId, loading, text) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  if (loading) {
+    btn.disabled = true;
+    btn.dataset.orig = btn.innerHTML;
+    btn.innerHTML = text;
+  } else {
+    btn.disabled = false;
+    if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
+  }
+}
 </script>
+
 </body>
 </html>

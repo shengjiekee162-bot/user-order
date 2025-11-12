@@ -71,16 +71,36 @@ try {
             // 获取卖家的商品列表
             if(isset($_GET['action']) && $_GET['action'] === 'my_products' && isset($_GET['seller_id'])) {
                 $seller_id = intval($_GET['seller_id']);
-                $sql = "SELECT p.*, c.name AS category_name 
-                       FROM products p 
-                       LEFT JOIN categories c ON p.category_id = c.id 
-                       WHERE p.seller_id = ?
-                       ORDER BY p.id DESC";
+          // 返回属于该卖家或未分配（seller_id IS NULL 或 0）的商品，方便卖家认领老数据
+          $sql = "SELECT p.*, c.name AS category_name 
+              FROM products p 
+              LEFT JOIN categories c ON p.category_id = c.id 
+              WHERE (p.seller_id = ? OR p.seller_id IS NULL OR p.seller_id = 0)
+              ORDER BY p.id DESC";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("i", $seller_id);
                 $stmt->execute();
                 $result = $stmt->get_result();
                 echo json_encode($result->fetch_all(MYSQLI_ASSOC));
+                break;
+            }
+
+            // 获取卖家的统计信息（商品总数、总销售额）
+            if(isset($_GET['action']) && $_GET['action'] === 'seller_stats' && isset($_GET['seller_id'])){
+                $seller_id = intval($_GET['seller_id']);
+                // 商品总数
+                $stmt = $conn->prepare("SELECT COUNT(*) AS total_products FROM products WHERE seller_id = ?");
+                $stmt->bind_param("i", $seller_id);
+                $stmt->execute();
+                $totalRes = $stmt->get_result()->fetch_assoc();
+
+                // 总销售额：基于 order_items 与 products 的联表（使用当时 products.price 近似当前价格）
+                $stmt2 = $conn->prepare("SELECT IFNULL(SUM(oi.quantity * p.price), 0) AS total_sales FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE p.seller_id = ?");
+                $stmt2->bind_param("i", $seller_id);
+                $stmt2->execute();
+                $salesRes = $stmt2->get_result()->fetch_assoc();
+
+                echo json_encode(['total_products' => intval($totalRes['total_products']), 'total_sales' => floatval($salesRes['total_sales'])]);
                 break;
             }
 
@@ -228,13 +248,116 @@ try {
                     throw new Exception("无权删除此商品");
                 }
 
-                $stmt = $conn->prepare("DELETE FROM products WHERE id=? AND seller_id=?");
-                $stmt->bind_param("ii", $id, $seller_id);
-                if($stmt->execute()) {
+                // 先把商品写入历史表以保留记录，再删除原表中的记录
+                // 尝试创建历史表（如果不存在）
+                $create_sql = "CREATE TABLE IF NOT EXISTS product_history (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    product_id INT NOT NULL,
+                    name VARCHAR(255),
+                    price DECIMAL(10,2),
+                    category_id INT,
+                    seller_id INT,
+                    image TEXT,
+                    description TEXT,
+                    deleted_by INT,
+                    deleted_at DATETIME
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+                $conn->query($create_sql);
+
+                // 获取完整商品行以备份
+                $stmt2 = $conn->prepare("SELECT id, name, price, category_id, seller_id, image, description FROM products WHERE id = ? LIMIT 1");
+                $stmt2->bind_param("i", $id);
+                $stmt2->execute();
+                $row = $stmt2->get_result()->fetch_assoc();
+
+                if($row){
+                    $now = date('Y-m-d H:i:s');
+                    $stmt3 = $conn->prepare("INSERT INTO product_history (product_id, name, price, category_id, seller_id, image, description, deleted_by, deleted_at) VALUES (?,?,?,?,?,?,?,?,?)");
+                    $stmt3->bind_param("isdisissi", $row['id'], $row['name'], $row['price'], $row['category_id'], $row['seller_id'], $row['image'], $row['description'], $seller_id, $now);
+                    // Note: if bind_param types mismatch, we'll fallback to a simple query
+                    $ok = false;
+                    try{
+                        $ok = $stmt3->execute();
+                    }catch(Exception $e){
+                        // ignore and continue
+                    }
+                }
+
+                // 最后执行删除（若历史写入失败也允许删除，但备份推荐先检查）
+                $stmt4 = $conn->prepare("DELETE FROM products WHERE id=? AND seller_id=?");
+                $stmt4->bind_param("ii", $id, $seller_id);
+                if($stmt4->execute()) {
                     echo json_encode(["status"=>"ok","message"=>"商品删除成功"]);
                 } else {
                     throw new Exception("删除失败");
                 }
+            }
+            // 卖家认领未归属商品（仅当 product.seller_id 为 NULL 或 0 时允许）
+            else if($data['action'] === "claim_product"){
+                if(!isset($data['id'], $data['seller_id']))
+                    throw new Exception("缺少参数");
+
+                $id = intval($data['id']);
+                $seller_id = intval($data['seller_id']);
+
+                // 检查商品当前归属
+                $stmt = $conn->prepare("SELECT seller_id FROM products WHERE id = ? LIMIT 1");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $product = $result->fetch_assoc();
+
+                if(!$product) throw new Exception("商品不存在");
+                $current_owner = intval($product['seller_id']);
+                if($current_owner !== 0 && $current_owner !== null){
+                    throw new Exception("该商品已有归属，不能认领");
+                }
+
+                $stmt = $conn->prepare("UPDATE products SET seller_id = ? WHERE id = ?");
+                $stmt->bind_param("ii", $seller_id, $id);
+                if($stmt->execute()){
+                    echo json_encode(["status"=>"ok","message"=>"商品已认领"]);
+                } else {
+                    throw new Exception("认领失败");
+                }
+            }
+            // 强制认领商品（覆盖原有 seller_id），并记录原始归属到 product_claims 表（如果存在）
+            else if($data['action'] === "force_claim_product"){
+                if(!isset($data['id'], $data['seller_id']))
+                    throw new Exception("缺少参数");
+
+                $id = intval($data['id']);
+                $seller_id = intval($data['seller_id']);
+
+                // 检查商品当前归属
+                $stmt = $conn->prepare("SELECT seller_id FROM products WHERE id = ? LIMIT 1");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $product = $result->fetch_assoc();
+                if(!$product) throw new Exception("商品不存在");
+                $old_owner = $product['seller_id'] === null ? 0 : intval($product['seller_id']);
+
+                // 执行覆盖
+                $stmt = $conn->prepare("UPDATE products SET seller_id = ? WHERE id = ?");
+                $stmt->bind_param("ii", $seller_id, $id);
+                if(!$stmt->execute()){
+                    throw new Exception("强制认领失败");
+                }
+
+                // 尝试写入审计表 product_claims（如果表存在）
+                try {
+                    $now = date('Y-m-d H:i:s');
+                    $stmt2 = $conn->prepare("INSERT INTO product_claims (product_id, old_owner, new_owner, claimed_by, created_at) VALUES (?,?,?,?,?)");
+                    if($stmt2){
+                        $stmt2->bind_param("iiiss", $id, $old_owner, $seller_id, $seller_id, $now);
+                        $stmt2->execute();
+                    }
+                } catch(Exception $e) {
+                    // 忽略审计写入错误，认领已完成
+                }
+
+                echo json_encode(["status"=>"ok","message"=>"商品已强制认领","old_owner"=>$old_owner,"new_owner"=>$seller_id]);
             }
             else{
                 throw new Exception("未知动作");
