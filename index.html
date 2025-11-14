@@ -94,6 +94,9 @@ header .user { font-size:14px; }
 <div class="search-bar">
   <input type="text" id="searchInput" placeholder="搜索商品...">
   <button onclick="searchProducts()">搜索</button>
+  <!-- 拍照搜索按钮：隐藏 file input，使用按钮触发拍照/上传 -->
+  <input type="file" id="imageInput" accept="image/*" capture="environment" style="display:none;" />
+  <button onclick="document.getElementById('imageInput').click();" style="margin-left:8px; background:#fff; color:#f53d2d; border:1px solid #f53d2d; padding:6px 10px; border-radius:6px;">📷 拍照搜索</button>
 </div>
 
 <div class="categories">
@@ -358,6 +361,55 @@ async function loadProducts(){
     `;
   });
 }
+
+// 拍照搜索：上传图片到后端并显示搜索结果
+document.getElementById('imageInput').addEventListener('change', async function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const imgPreview = document.createElement('div');
+  imgPreview.style.margin = '10px 0';
+  imgPreview.innerHTML = `<div style="margin-bottom:6px">正在上传图片并搜索相似商品...</div>`;
+  const container = document.getElementById('productContainer');
+  container.prepend(imgPreview);
+
+  const fd = new FormData();
+  fd.append('image', file);
+
+  try{
+    const res = await fetch('image_search.php', { method: 'POST', body: fd });
+    const data = await res.json();
+    imgPreview.remove();
+    if(!data) return alert('搜索失败');
+    if(data.message) {
+      // 服务端可能返回信息
+      console.info('image_search:', data.message);
+    }
+    // data.products 期望为数组
+    const products = Array.isArray(data.products) ? data.products : [];
+    if(products.length === 0){
+      container.innerHTML = '<p style="color:#999">未找到相似商品，显示全部商品作为回退。</p>';
+      await loadProducts();
+      return;
+    }
+    // 渲染结果
+    container.innerHTML = '';
+    products.forEach(p=>{
+      container.innerHTML += `
+      <div class="card">
+        <h4>${escapeHtml(p.name)}</h4>
+        <p>RM ${p.price}</p>
+        <button onclick='addToCart(${JSON.stringify(p)})'>加入购物车</button>
+      </div>
+    `;
+    });
+  } catch(err){
+    imgPreview.remove();
+    alert('上传或搜索失败: ' + err.message);
+  } finally{
+    // 清空 input 以便后续可重复选择同一文件
+    e.target.value = '';
+  }
+});
 
 function addToCart(p){
   const found = cart.find(i=>i.id===p.id);

@@ -71,7 +71,7 @@ switch($method) {
         $stmt2->bind_param("iss", $user_id, $token, $expires);
         $stmt2->execute();
 
-        // 返回 token（本地开发环境无法发送邮件，因此直接返回 token 供使用）
+            // 返回 token（本地开发环境无法发送邮件，因此直接返回 token 供使用）
         echo json_encode(["status"=>"ok","message"=>"重置码已生成（仅本地显示）","token"=>$token]);
         exit;
     }
