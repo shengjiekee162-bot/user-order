@@ -91,6 +91,8 @@ header .user { font-size:14px; }
   </div>
 </header>
 
+
+
 <div class="search-bar">
   <input type="text" id="searchInput" placeholder="搜索商品...">
   <button onclick="searchProducts()">搜索</button>
@@ -308,7 +310,7 @@ function showUser() {
     html += `<button onclick="logout()" style="background:#fff; color:#f53d2d; border:none; padding:3px 8px; border-radius:4px; cursor:pointer; margin-left:6px;">退出登录</button>`;
     userDiv.innerHTML = html;
   } else {
-    userDiv.innerHTML = `<a href="login.html" style="color:white;">登录 / 注册</a>`;
+    userDiv.innerHTML = `<a href="login.html" style="color:white;">登录 / 注册</a> · <a href="forgot_password.html" style="color:white;">忘记密码</a>`;
   }
 }
 

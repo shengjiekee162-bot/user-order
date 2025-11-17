@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>请求重置密码 - 输入邮箱</title>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:40px}label{display:block;margin:8px 0}input{padding:8px;width:300px}button{padding:8px 12px;margin-top:12px}#msg{margin-top:12px}</style>
+</head>
+<body>
+  <h1>重置密码 — 请求验证码</h1>
+  <p>请输入注册时使用的邮箱，系统会把 6 位验证码发送到该邮箱。</p>
+  <label>邮箱
+    <input id="email" type="email" placeholder="you@example.com" required>
+  </label>
+  <button id="sendBtn">发送验证码</button>
+  <div id="msg"></div>
+
+  <script>
+    const sendBtn = document.getElementById('sendBtn');
+    const msg = document.getElementById('msg');
+    sendBtn.addEventListener('click', async () => {
+      msg.textContent = '';
+      const email = document.getElementById('email').value.trim();
+      if (!email) { msg.textContent = '请输入邮箱地址。'; return; }
+
+      sendBtn.disabled = true; msg.textContent = '正在发送...';
+      try {
+        const res = await fetch('auth.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'request_password_reset', username: email })
+        });
+        const j = await res.json();
+        if (j.status === 'ok') {
+          msg.textContent = '验证码已发送，请检查邮箱。';
+        } else {
+          msg.textContent = '失败：' + (j.message || '未知错误');
+        }
+      } catch (e) {
+        msg.textContent = '请求失败：' + e.message;
+      }
+      sendBtn.disabled = false;
+    });
+  </script>
+</body>
+</html>

@@ -1,47 +1,134 @@
-<!DOCTYPE html>
-<html lang="zh">
+<!doctype html>
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>忘记密码 - 重置</title>
-<style>
-body { font-family: Arial; background: #f7f7f7; display:flex; justify-content:center; align-items:center; height:100vh; }
-form { background:white; padding:30px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
-input { display:block; width:300px; margin:10px 0; padding:8px; }
-button { background:#f53d2d; color:white; border:none; padding:10px; width:100%; cursor:pointer; }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>忘记密码 - 重置密码</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:28px;background:#fafafa}
+    .card{max-width:480px;margin:0 auto;background:#fff;padding:22px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+    h1{font-size:20px;margin:0 0 12px}
+    label{display:block;margin:10px 0}
+    input{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px}
+    button{padding:10px 14px;border:none;background:#f53d2d;color:#fff;border-radius:6px;cursor:pointer}
+    .muted{color:#666;font-size:0.9em}
+    .row{display:flex;gap:8px}
+    .small{padding:8px 10px}
+    #msg{margin-top:12px}
+    .hidden{display:none}
+  </style>
 </head>
 <body>
+  <div class="card">
+    <h1>忘记密码</h1>
+    <p class="muted">输入您的账号用户名和用于接收验证码的邮箱，系统会发送一个 6 位验证码到该邮箱，用于重置密码。</p>
 
-<form id="forgotForm">
-  <h2>忘记密码</h2>
-  <p>输入用户名以生成重置码（本地开发环境会直接显示重置码）。</p>
-  <input type="text" id="username" placeholder="用户名" required>
-  <button type="submit">生成重置码</button>
-  <div id="result" style="margin-top:12px;color:#333;"></div>
-  <a href="login.html">返回登录</a>
-</form>
+    <div id="step-request">
+      <label>用户名
+        <input id="fp_username" type="text" placeholder="您的用户名">
+      </label>
+      <label>邮箱地址
+        <input id="fp_email" type="email" placeholder="you@example.com">
+      </label>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+        <button id="btn_send">发送验证码</button>
+        <button id="btn_gotocode" class="small" style="background:#ddd;color:#333;">我已收到验证码</button>
+      </div>
+      <div id="msg" class="muted"></div>
+    </div>
 
-<script>
-document.getElementById('forgotForm').onsubmit = async function(e){
-  e.preventDefault();
-  const username = document.getElementById('username').value.trim();
-  if(!username) return alert('请输入用户名');
-  const payload = { action: 'request_password_reset', username };
-  try{
-    const res = await fetch('auth.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-    const msg = await res.json();
-    if(msg.status === 'ok'){
-      // 显示 token 并提供跳转链接到重置页面
-      const token = msg.token;
-      document.getElementById('result').innerHTML = `重置码：<b>${token}</b><br/><a href="reset_password.html?token=${token}">点击这里使用重置码重置密码</a>`;
-    } else {
-      document.getElementById('result').textContent = '错误：' + (msg.message || '生成失败');
+    <div id="step-reset" class="hidden">
+      <label>用户名
+        <input id="fp_username2" type="text" placeholder="您的用户名">
+      </label>
+      <label>邮箱地址
+        <input id="fp_email2" type="email" placeholder="you@example.com">
+      </label>
+      <label>验证码
+        <input id="fp_code" type="text" placeholder="6 位验证码">
+      </label>
+      <label>新密码
+        <input id="fp_new" type="password" placeholder="新密码">
+      </label>
+      <label>确认新密码
+        <input id="fp_new2" type="password" placeholder="再次输入新密码">
+      </label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button id="btn_reset">提交重置</button>
+        <button id="btn_back" class="small" style="background:#eee;color:#333;">返回发送</button>
+      </div>
+      <div id="reset_msg" class="muted"></div>
+    </div>
+  </div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    const stepReq = el('step-request');
+    const stepReset = el('step-reset');
+    const msg = el('msg');
+    const resetMsg = el('reset_msg');
+
+    function showResetStep(prefillEmail){
+      stepReq.classList.add('hidden');
+      stepReset.classList.remove('hidden');
+      if(prefillEmail){ el('fp_email2').value = prefillEmail; }
     }
-  } catch(err){
-    document.getElementById('result').textContent = '网络错误：' + err.message;
-  }
-};
-</script>
+    function showRequestStep(){
+      stepReq.classList.remove('hidden');
+      stepReset.classList.add('hidden');
+      msg.textContent = '';
+      resetMsg.textContent = '';
+    }
 
+    el('btn_gotocode').addEventListener('click', ()=> showResetStep(el('fp_username').value.trim(), el('fp_email').value.trim()));
+    el('btn_back').addEventListener('click', showRequestStep);
+
+    el('btn_send').addEventListener('click', async ()=>{
+      msg.textContent = '';
+      const username = el('fp_username').value.trim();
+      const email = el('fp_email').value.trim();
+      if(!username){ msg.textContent = '请输入用户名'; return; }
+      if(!email){ msg.textContent = '请输入邮箱地址'; return; }
+      el('btn_send').disabled = true; msg.textContent = '正在发送验证码...';
+      try{
+        const res = await fetch('auth.php', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ action: 'request_password_reset', username: username, email: email })
+        });
+        const j = await res.json();
+        if(j.status === 'ok'){
+          msg.textContent = '验证码已发送，请检查邮箱。';
+          // enable quick transition to reset panel
+          setTimeout(()=> showResetStep(email), 800);
+        } else {
+          msg.textContent = '发送失败：' + (j.message || '未知错误');
+        }
+      } catch(e){ msg.textContent = '请求失败：' + e.message; }
+      el('btn_send').disabled = false;
+    });
+
+    el('btn_reset').addEventListener('click', async ()=>{
+      resetMsg.textContent = '';
+      const username = el('fp_username2').value.trim();
+      const email = el('fp_email2').value.trim();
+      const code = el('fp_code').value.trim();
+      const p1 = el('fp_new').value; const p2 = el('fp_new2').value;
+      if(!username || !email || !code || !p1) { resetMsg.textContent = '请完整填写所有字段'; return; }
+      if(p1 !== p2){ resetMsg.textContent = '两次密码不一致'; return; }
+      el('btn_reset').disabled = true; resetMsg.textContent = '正在提交...';
+      try{
+        const res = await fetch('auth.php', { method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ action: 'reset_password', username: username, code: code, new_password: p1 }) });
+        const j = await res.json();
+        if(j.status === 'ok'){
+          resetMsg.style.color = 'green'; resetMsg.textContent = '密码重置成功，请使用新密码登录。';
+          setTimeout(()=> location.href = 'login.html', 1500);
+        } else {
+          resetMsg.style.color = 'red'; resetMsg.textContent = '重置失败：' + (j.message || '未知错误');
+        }
+      } catch(e){ resetMsg.style.color='red'; resetMsg.textContent = '请求失败：' + e.message; }
+      el('btn_reset').disabled = false;
+    });
+  </script>
 </body>
 </html>
