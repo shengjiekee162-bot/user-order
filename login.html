@@ -40,10 +40,21 @@ document.getElementById("loginForm").onsubmit = async function(e){
     });
     const msg = await res.json();
     if(msg.status === "ok"){
-      // 登录成功，保存用户信息到 localStorage
+      // 登录成功，标准化并保存用户信息到 localStorage（避免大小写/空格问题导致前端判断失效）
+      if(msg.user && msg.user.role){
+        msg.user.role = String(msg.user.role).toLowerCase().trim();
+      } else if(msg.user){
+        msg.user.role = 'buyer';
+      }
       localStorage.setItem("user", JSON.stringify(msg.user));
       alert("登录成功！");
-      window.location.href = "index.html";
+      // 根据角色跳转：seller -> seller.html, 其他 -> index.html
+      const role = (msg.user && msg.user.role) || 'buyer';
+      if(role === 'seller') {
+        window.location.href = 'seller.html';
+      } else {
+        window.location.href = 'index.html';
+      }
     } else {
       alert("登录失败：" + msg.message);
     }

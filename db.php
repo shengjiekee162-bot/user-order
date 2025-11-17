@@ -1,28 +1,33 @@
 <?php
-// 开启错误报告（开发阶段）
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// 数据库配置
+// Database configuration - keep silent on errors (they will be logged) to avoid
+// breaking JSON responses from API endpoints. Adjust these values to your env.
 $host = "localhost";
 $user = "root";
 $pass = "123qwe";
 $dbname = "shopee_clone";
 
-// 创建连接
-$conn = new mysqli($host, $user, $pass, $dbname);
+// Ensure errors are not printed to output
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+ini_set('log_errors', 1);
+if (!ini_get('error_log')) {
+    ini_set('error_log', __DIR__ . '/php_errors.log');
+}
 
-// 检查连接
+// Create connection
+$conn = @new mysqli($host, $user, $pass, $dbname);
+
+// Check connection
 if ($conn->connect_error) {
-    // 返回 JSON 而不是 HTML
+    error_log("DB connect error: " . $conn->connect_error);
+    // Provide a minimal JSON error (no extra whitespace)
     echo json_encode([
         "status" => "error",
-        "message" => "数据库连接失败: " . $conn->connect_error
+        "message" => "数据库连接失败"
     ]);
     exit;
 }
 
-// 设置字符集
+// Set charset
 $conn->set_charset("utf8mb4");
 ?>

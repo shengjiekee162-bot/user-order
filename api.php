@@ -104,13 +104,42 @@ try {
                 break;
             }
 
-            // 管理员：列出所有用户（仅返回有限字段）
-            if(isset($_GET['action']) && $_GET['action'] === 'list_users'){
-                $res = $conn->query("SELECT id, username, role, created_at FROM users ORDER BY id DESC");
-                if(!$res) throw new Exception($conn->error);
+            // 获取卖家的销售明细（订单项），包含订单信息与买家信息
+            if(isset($_GET['action']) && $_GET['action'] === 'seller_sales' && isset($_GET['seller_id'])){
+                $seller_id = intval($_GET['seller_id']);
+                $sql = "SELECT oi.id as order_item_id, oi.order_id, oi.quantity, p.id as product_id, p.name as product_name, p.price as product_price, o.user_id as buyer_id, o.total_price as order_total, o.created_at as order_date, u.username as buyer_username, o.payment_status, o.payment_method
+                        FROM order_items oi
+                        JOIN products p ON oi.product_id = p.id
+                        JOIN orders o ON oi.order_id = o.id
+                        LEFT JOIN users u ON o.user_id = u.id
+                        WHERE p.seller_id = ?
+                        ORDER BY o.created_at DESC";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("i", $seller_id);
+                $stmt->execute();
+                $res = $stmt->get_result();
                 echo json_encode($res->fetch_all(MYSQLI_ASSOC));
                 break;
             }
+
+            // 获取卖家每个商品的销售汇总（销量与总收入）
+            if(isset($_GET['action']) && $_GET['action'] === 'seller_product_stats' && isset($_GET['seller_id'])){
+                $seller_id = intval($_GET['seller_id']);
+                $sql = "SELECT p.id as product_id, p.name as product_name, IFNULL(SUM(oi.quantity),0) as total_sold, IFNULL(SUM(oi.quantity * p.price),0) as total_revenue
+                        FROM products p
+                        LEFT JOIN order_items oi ON oi.product_id = p.id
+                        WHERE p.seller_id = ?
+                        GROUP BY p.id
+                        ORDER BY total_sold DESC";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("i", $seller_id);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                echo json_encode($res->fetch_all(MYSQLI_ASSOC));
+                break;
+            }
+
+            
 
             // 获取所有商品
             $category = isset($_GET['category']) ? $_GET['category'] : '';
@@ -367,69 +396,7 @@ try {
 
                 echo json_encode(["status"=>"ok","message"=>"商品已强制认领","old_owner"=>$old_owner,"new_owner"=>$seller_id]);
             }
-            // 管理员删除商品（不检查 seller_id），会先写入 product_history
-            else if($data['action'] === 'admin_delete_product'){
-                if(!isset($data['id'], $data['admin_id'])) throw new Exception('缺少参数');
-                $id = intval($data['id']);
-                $admin_id = intval($data['admin_id']);
-                // 验证 admin_id 为 admin
-                $stmt = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-                $stmt->bind_param("i", $admin_id);
-                $stmt->execute();
-                $r = $stmt->get_result()->fetch_assoc();
-                if(!$r || $r['role'] !== 'admin') throw new Exception('无权操作');
-
-                // 先备份到 product_history
-                $conn->query("CREATE TABLE IF NOT EXISTS product_history (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    product_id INT NOT NULL,
-                    name VARCHAR(255),
-                    price DECIMAL(10,2),
-                    category_id INT,
-                    seller_id INT,
-                    image TEXT,
-                    description TEXT,
-                    deleted_by INT,
-                    deleted_at DATETIME
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
-                $stmt2 = $conn->prepare("SELECT id, name, price, category_id, seller_id, image, description FROM products WHERE id = ? LIMIT 1");
-                $stmt2->bind_param("i", $id);
-                $stmt2->execute();
-                $row = $stmt2->get_result()->fetch_assoc();
-                if($row){
-                    $now = date('Y-m-d H:i:s');
-                    $stmt3 = $conn->prepare("INSERT INTO product_history (product_id, name, price, category_id, seller_id, image, description, deleted_by, deleted_at) VALUES (?,?,?,?,?,?,?,?,?)");
-                    $stmt3->bind_param("isdisissi", $row['id'], $row['name'], $row['price'], $row['category_id'], $row['seller_id'], $row['image'], $row['description'], $admin_id, $now);
-                    try{ $stmt3->execute(); }catch(Exception $e){}
-                }
-
-                $stmt4 = $conn->prepare("DELETE FROM products WHERE id = ?");
-                $stmt4->bind_param("i", $id);
-                if($stmt4->execute()){
-                    echo json_encode(['status'=>'ok','message'=>'商品已由管理员删除']);
-                } else throw new Exception('删除失败');
-            }
-
-            // 管理员设置用户角色（需 admin 验证）
-            else if($data['action'] === 'set_user_role'){
-                if(!isset($data['admin_id'], $data['user_id'], $data['role'])) throw new Exception('缺少参数');
-                $admin_id = intval($data['admin_id']);
-                $user_id = intval($data['user_id']);
-                $role = $data['role'];
-                // 验证 admin
-                $stmt = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
-                $stmt->bind_param("i", $admin_id);
-                $stmt->execute();
-                $r = $stmt->get_result()->fetch_assoc();
-                if(!$r || $r['role'] !== 'admin') throw new Exception('无权操作');
-                // 安全：只允许 buyer/seller/admin
-                if(!in_array($role, ['buyer','seller','admin'])) throw new Exception('无效角色');
-                $stmt2 = $conn->prepare("UPDATE users SET role = ? WHERE id = ?");
-                $stmt2->bind_param("si", $role, $user_id);
-                if($stmt2->execute()) echo json_encode(['status'=>'ok','message'=>'角色已更新']);
-                else throw new Exception('更新失败');
-            }
+            
             else{
                 throw new Exception("未知动作");
             }

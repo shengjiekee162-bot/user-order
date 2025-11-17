@@ -418,6 +418,17 @@ header .user-info button:hover {
           <!-- Bulk claim removed: single-item claim remains -->
         </div>
         <div id="productsList"></div>
+        
+        <hr style="margin:18px 0;" />
+
+        <h2>📈 销售记录</h2>
+        <div style="margin-bottom:12px; text-align:right;">
+          <button class="btn btn-secondary" onclick="loadSellerSales()">刷新销售记录</button>
+          <button class="btn btn-secondary" onclick="loadSellerProductStats()">查看商品销售汇总</button>
+        </div>
+        <div id="salesArea">
+          <p style="color:#999;">尚未加载销售记录，点击“刷新销售记录”以查看。</p>
+        </div>
       </div>
     </div>
   </div>
@@ -462,6 +473,58 @@ async function safeFetch(url, options) {
   try {
     const res = await fetch(url, options);
     const text = await res.text();
+
+    // 加载卖家销售明细
+    async function loadSellerSales(){
+      if (!currentUser) return;
+      const area = document.getElementById('salesArea');
+      area.innerHTML = '<p>加载中...</p>';
+      const res = await safeFetch(`api.php?action=seller_sales&seller_id=${currentUser.id}`);
+      if (!res) { area.innerHTML = '<p style="color:#999;">加载失败</p>'; return; }
+      if (!Array.isArray(res) || res.length === 0) {
+        area.innerHTML = '<p style="color:#999;">暂无销售记录</p>';
+        return;
+      }
+      // render list grouped by order_id
+      const groups = {};
+      res.forEach(r=>{
+        const oid = r.order_id;
+        if(!groups[oid]) groups[oid] = {order: r.order_id, date: r.order_date, buyer: r.buyer_username, payment_status: r.payment_status, payment_method: r.payment_method, items: []};
+        groups[oid].items.push(r);
+      });
+      let html = '';
+      Object.values(groups).forEach(g=>{
+        html += `<div style="background:#fff;padding:12px;border-radius:6px;margin-bottom:10px;">
+          <div style="font-weight:bold;color:#f53d2d">订单 #${g.order} — 买家: ${escapeHtml(g.buyer||'未知')} — ${g.date}</div>
+          <div style="margin-top:8px">支付: ${escapeHtml(g.payment_method||'')} / ${escapeHtml(g.payment_status||'')}</div>
+          <table style="width:100%;margin-top:8px;border-collapse:collapse"><tr style="background:#f3f3f3"><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr>`;
+        g.items.forEach(it=>{
+          const subtotal = (parseFloat(it.product_price) * parseInt(it.quantity)).toFixed(2);
+          html += `<tr><td>${escapeHtml(it.product_name)}</td><td>RM ${parseFloat(it.product_price).toFixed(2)}</td><td>${it.quantity}</td><td>RM ${subtotal}</td></tr>`;
+        });
+        html += `</table></div>`;
+      });
+      area.innerHTML = html;
+    }
+
+    // 加载卖家每个商品的销售汇总
+    async function loadSellerProductStats(){
+      if (!currentUser) return;
+      const area = document.getElementById('salesArea');
+      area.innerHTML = '<p>加载中...</p>';
+      const res = await safeFetch(`api.php?action=seller_product_stats&seller_id=${currentUser.id}`);
+      if (!res) { area.innerHTML = '<p style="color:#999;">加载失败</p>'; return; }
+      if (!Array.isArray(res) || res.length === 0) {
+        area.innerHTML = '<p style="color:#999;">暂无销售统计</p>';
+        return;
+      }
+      let html = `<table><tr><th>商品</th><th>已售数量</th><th>总收入 (RM)</th></tr>`;
+      res.forEach(r=>{
+        html += `<tr><td>${escapeHtml(r.product_name)}</td><td>${r.total_sold}</td><td>RM ${parseFloat(r.total_revenue).toFixed(2)}</td></tr>`;
+      });
+      html += '</table>';
+      area.innerHTML = html;
+    }
     try {
       return JSON.parse(text);
     } catch {
