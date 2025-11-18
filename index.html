@@ -84,25 +84,28 @@ header .user { font-size:14px; }
 
 <main>
 <header>
-  <h1>示例商城 🛒</h1>
+  <h1 data-i18n="site.title">示例商城 🛒</h1>
   <div style="display:flex; align-items:center; gap:8px;">
-    <button class="mobile-sidebar-btn" onclick="toggleSidebarMobile()" aria-label="打开侧边栏">☰</button>
-    <div class="user" id="userDisplay">未登录</div>
+
+  <!-- user display area (rendered by showUser) -->
+  <div id="userDisplay" class="user" style="color:white; font-size:14px; margin-left:8px;"></div>
+
+  <div class="sidebar" style="display:none;">
   </div>
 </header>
 
 
 
 <div class="search-bar">
-  <input type="text" id="searchInput" placeholder="搜索商品...">
-  <button onclick="searchProducts()">搜索</button>
+  <input type="text" id="searchInput" placeholder="搜索商品..." data-i18n="search.placeholder" data-i18n-attr="placeholder">
+  <button id="searchBtn" onclick="searchProducts()" data-i18n="search.button">搜索</button>
   <!-- 拍照搜索按钮：隐藏 file input，使用按钮触发拍照/上传 -->
   <input type="file" id="imageInput" accept="image/*" capture="environment" style="display:none;" />
-  <button onclick="document.getElementById('imageInput').click();" style="margin-left:8px; background:#fff; color:#f53d2d; border:1px solid #f53d2d; padding:6px 10px; border-radius:6px;">📷 拍照搜索</button>
+  <button onclick="document.getElementById('imageInput').click();" style="margin-left:8px; background:#fff; color:#f53d2d; border:1px solid #f53d2d; padding:6px 10px; border-radius:6px;" data-i18n="camera.button">📷 拍照搜索</button>
 </div>
 
 <div class="categories">
-  <button onclick="filterCategory('')">全部</button>
+  <button onclick="filterCategory('')" data-i18n="categories.all">全部</button>
   <button onclick="filterCategory('电子产品')">电子产品</button>
   <button onclick="filterCategory('配件')">配件</button>
   <button onclick="filterCategory('生活用品')">生活用品</button>
@@ -111,18 +114,18 @@ header .user { font-size:14px; }
 <div class="products" id="productContainer"></div>
 
   <div style="display:flex; gap:10px;">
-  <div class="cart" onclick="toggleCheckoutForm()">🛒 购物车 (<span id="count">0</span>)</div>
-  <div class="cart"><a href="orders.html" style="color:white; text-decoration:none; display:block;">📦 我的订单</a></div>
+  <div class="cart" onclick="toggleCheckoutForm()"><span data-i18n="cart.label">🛒 购物车</span> (<span id="count">0</span>)</div>
+  <div class="cart"><a href="orders.html" style="color:white; text-decoration:none; display:block;" data-i18n="orders.link">📦 我的订单</a></div>
   </div>
 
 <!-- 结账模态弹窗（合并地址/支付/个人资料） -->
 <div id="checkoutModal" class="modal" style="display:none;">
   <div class="modal-content">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <h3>结账 & 支付</h3>
+    <h3 data-i18n="checkout.title">结账 & 支付</h3>
       <div>
         <span style="margin-right:10px; color:#666">当前用户: <b id="checkoutUser">未登录</b></span>
-        <button onclick="showCheckoutTab()" style="background:#fff; border:1px solid #ddd; padding:6px 8px; border-radius:4px; margin-right:6px;">结账</button>
+        <button onclick="showCheckoutTab()" style="background:#fff; border:1px solid #ddd; padding:6px 8px; border-radius:4px; margin-right:6px;" data-i18n="checkout.title">结账</button>
         <button onclick="showOrdersTab()" style="background:#fff; border:1px solid #ddd; padding:6px 8px; border-radius:4px; margin-right:6px;">我的订单</button>
         <button onclick="toggleCheckoutForm()" style="background:#ddd; border:none; padding:6px 8px; border-radius:4px;">关闭</button>
       </div>
@@ -214,7 +217,7 @@ header .user { font-size:14px; }
         </div>
 
         <div class="form-group" style="margin-top:12px;">
-          <button onclick="checkout()" style="margin-top:5px; width:100%;">确认下单</button>
+          <button onclick="checkout()" style="margin-top:5px; width:100%;" data-i18n="checkout.place_order">确认下单</button>
         </div>
       </div>
     </div>
@@ -786,6 +789,8 @@ function toggleSidebarMobile(){
   }
 }
 </script>
+
+<script src="i18n.js"></script>
 
 </body>
 </html>

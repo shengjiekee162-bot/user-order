@@ -14,14 +14,15 @@ a { display:block; margin-top:10px; text-align:center; }
 <body>
 
 <form id="registerForm">
-  <h2>注册账号</h2>
-  <input type="text" id="username" placeholder="用户名" required>
-  <input type="password" id="password" placeholder="密码" required>
+  <h2 data-i18n="register.title">注册账号</h2>
+  <input type="text" id="username" placeholder="用户名" data-i18n="register.username" data-i18n-attr="placeholder" required>
+  <input type="email" id="email" placeholder="邮箱地址" data-i18n="register.email" data-i18n-attr="placeholder" required>
+  <input type="password" id="password" placeholder="密码" data-i18n="register.password" data-i18n-attr="placeholder" required>
   <select id="role">
     <option value="buyer">买家</option>
     <option value="seller">卖家</option>
   </select>
-  <button type="submit">注册</button>
+  <button type="submit" data-i18n="register.submit">注册</button>
   <a href="login.html">已有账号？去登录</a>
 </form>
 
@@ -31,6 +32,7 @@ document.getElementById("registerForm").onsubmit = async function(e){
   const data = {
     action: "register",
     username: username.value,
+    email: email.value,
     password: password.value,
     role: role.value
   };
@@ -52,6 +54,7 @@ document.getElementById("registerForm").onsubmit = async function(e){
   }
 };
 </script>
+<script src="i18n.js"></script>
 
 </body>
 </html>

@@ -14,13 +14,13 @@ a { display:block; margin-top:10px; text-align:center; }
 <body>
 
 <form id="loginForm">
-  <h2>登录账号</h2>
-  <input type="text" id="username" placeholder="用户名" required>
-  <input type="password" id="password" placeholder="密码" required>
-  <button type="submit">登录</button>
+  <h2 data-i18n="login.title">登录账号</h2>
+  <input type="text" id="username" placeholder="用户名" data-i18n="login.username" data-i18n-attr="placeholder" required>
+  <input type="password" id="password" placeholder="密码" data-i18n="login.password" data-i18n-attr="placeholder" required>
+  <button type="submit" data-i18n="login.submit">登录</button>
   <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
     <a href="register.html">没有账号？去注册</a>
-    <a href="forgot.html" style="color:#f53d2d; font-weight:bold;">忘记密码？</a>
+    <a href="forgot.html" style="color:#f53d2d; font-weight:bold;" data-i18n="header.forgot">忘记密码？</a>
   </div>
 </form>
 
@@ -63,6 +63,7 @@ document.getElementById("loginForm").onsubmit = async function(e){
   }
 };
 </script>
+<script src="i18n.js"></script>
 
 </body>
 </html>

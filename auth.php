@@ -68,26 +68,48 @@ $action = $input["action"] ?? "";
 /* -------------------- 注册 -------------------- */
 if ($action === "register") {
     $u = trim($input["username"] ?? "");
+    $email = trim($input["email"] ?? "");
     $pw = trim($input["password"] ?? "");
     $role = $input["role"] ?? "buyer";
 
-    if (!$u || !$pw) json_out(["status"=>"fail","message"=>"缺少用户名或密码"]);
+    if (!$u || !$pw || !$email) json_out(["status"=>"fail","message"=>"缺少用户名、邮箱或密码"]);
 
-    // 查重复
+    // 简单的邮箱格式验证
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) json_out(["status"=>"fail","message"=>"邮箱格式不正确"]);
+
+    // 确保 users 表有 email 列（如果没有则添加）
+    $hasEmail = false;
+    $colRes = $conn->query("SHOW COLUMNS FROM users LIKE 'email'");
+    if ($colRes && $colRes->num_rows > 0) $hasEmail = true;
+    if (!$hasEmail) {
+        $conn->query("ALTER TABLE users ADD COLUMN email VARCHAR(255) DEFAULT NULL");
+    }
+
+    // 查重复：用户名和邮箱都不能重复
     $stmt = $conn->prepare("SELECT id FROM users WHERE username=? LIMIT 1");
     $stmt->bind_param("s", $u);
     $stmt->execute();
     if ($stmt->get_result()->num_rows > 0)
         json_out(["status"=>"fail","message"=>"用户名已存在"]);
 
+    $stmtE = $conn->prepare("SELECT id FROM users WHERE email=? LIMIT 1");
+    if ($stmtE) {
+        $stmtE->bind_param("s", $email);
+        $stmtE->execute();
+        if ($stmtE->get_result()->num_rows > 0)
+            json_out(["status"=>"fail","message"=>"邮箱已被使用"]);
+    }
+
     // 加密密码
     $hash = password_hash($pw, PASSWORD_DEFAULT);
 
     $role = in_array($role, ["buyer","seller"]) ? $role : "buyer";
 
-    $stmt = $conn->prepare("INSERT INTO users(username,password,role) VALUES(?,?,?)");
-    $stmt->bind_param("sss", $u, $hash, $role);
-    $stmt->execute();
+    $stmt = $conn->prepare("INSERT INTO users(username,password,role,email) VALUES(?,?,?,?)");
+    $stmt->bind_param("ssss", $u, $hash, $role, $email);
+    if (!$stmt->execute()) {
+        json_out(["status"=>"fail","message"=>"注册失败：" . $conn->error]);
+    }
 
     json_out(["status"=>"ok","message"=>"注册成功"]);
 }
@@ -209,6 +231,31 @@ if ($action === "reset_password") {
     $stmt3->execute();
 
     json_out(["status"=>"ok","message"=>"密码重置成功"]);
+}
+
+/* -------------------- 使用旧密码修改（需要提供旧密码） -------------------- */
+if ($action === "change_password") {
+    $u = trim($input["username"] ?? "");
+    $old = $input["old_password"] ?? "";
+    $new = $input["new_password"] ?? "";
+
+    if (!$u || !$old || !$new) json_out(["status"=>"fail","message"=>"缺少用户名、旧密码或新密码"]);
+    if (strlen($new) < 6) json_out(["status"=>"fail","message"=>"新密码至少 6 位"]);
+
+    $stmt = $conn->prepare("SELECT id, password FROM users WHERE username=? LIMIT 1");
+    $stmt->bind_param("s", $u);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+    if (!$user) json_out(["status"=>"fail","message"=>"用户不存在"]);
+
+    if (!password_verify($old, $user['password'])) json_out(["status"=>"fail","message"=>"旧密码不正确"]);
+
+    $hash = password_hash($new, PASSWORD_DEFAULT);
+    $stmt2 = $conn->prepare("UPDATE users SET password=? WHERE id=?");
+    $stmt2->bind_param("si", $hash, $user['id']);
+    if (!$stmt2->execute()) json_out(["status"=>"fail","message"=>"更新密码失败"]);
+
+    json_out(["status"=>"ok","message"=>"密码已更新"]);
 }
 
 /* Password-reset endpoints removed as requested */
