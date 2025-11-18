@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>销售记录 - 卖家</title>
+<style>
+  body{font-family:Segoe UI,Roboto,Arial;margin:18px;background:#fafafa}
+  .wrap{max-width:980px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  h1{margin:0;color:#f53d2d}
+  .card{background:#fff;padding:14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.06);}
+  .order{margin-bottom:12px;padding:12px;border-radius:6px;border-left:4px solid #f53d2d;background:#fff}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:6px 8px;border-bottom:1px solid #f3f3f3;text-align:left}
+  .muted{color:#666}
+  a.btn{display:inline-block;padding:8px 12px;border-radius:6px;background:#f53d2d;color:#fff;text-decoration:none}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>📈 销售记录</h1>
+      <div>
+        <a class="btn" href="seller.html">返回卖家中心</a>
+      </div>
+    </header>
+
+    <div id="content" class="card">
+      <div id="loading" class="muted">正在加载销售记录……</div>
+      <div id="list"></div>
+    </div>
+  </div>
+
+<script>
+(async function(){
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+  if(!currentUser){ alert('请先登录'); window.location.href='login.html'; return; }
+  if(currentUser.role !== 'seller'){ alert('仅限卖家查看'); window.location.href='index.html'; return; }
+
+  const listEl = document.getElementById('list');
+  const loading = document.getElementById('loading');
+  function escapeHtml(str){ if(!str) return ''; return String(str).replace(/[&<>'"]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+
+  try{
+    const res = await fetch(`api.php?action=seller_sales&seller_id=${currentUser.id}`);
+    const data = await res.json();
+    loading.style.display = 'none';
+    if(!Array.isArray(data) || data.length===0){ listEl.innerHTML = '<p class="muted">暂无销售记录。</p>'; return; }
+
+    // Group by order_id
+    const groups = {};
+    data.forEach(r=>{
+      const oid = r.order_id;
+      if(!groups[oid]) groups[oid] = {order: r.order_id, date: r.order_date, buyer: r.buyer_username, payment_status: r.payment_status, payment_method: r.payment_method, items: []};
+      groups[oid].items.push(r);
+    });
+
+    let html = '';
+    Object.values(groups).forEach(g=>{
+      html += `<div class="order">`;
+      html += `<div style="font-weight:700;color:#f53d2d">订单 #${escapeHtml(g.order)} — 买家: ${escapeHtml(g.buyer||'未知')} — ${escapeHtml(g.date||'')}</div>`;
+      html += `<div style="margin:8px 0">支付: ${escapeHtml(g.payment_method||'')} / ${escapeHtml(g.payment_status||'')}</div>`;
+      html += `<table><thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr></thead><tbody>`;
+      g.items.forEach(it=>{
+        const subtotal = (parseFloat(it.product_price) * parseInt(it.quantity||0)).toFixed(2);
+        html += `<tr><td>${escapeHtml(it.product_name)}</td><td>RM ${parseFloat(it.product_price).toFixed(2)}</td><td>${escapeHtml(it.quantity)}</td><td>RM ${subtotal}</td></tr>`;
+      });
+      html += `</tbody></table>`;
+      html += `</div>`;
+    });
+
+    listEl.innerHTML = html;
+  }catch(err){
+    loading.style.display = 'none';
+    listEl.innerHTML = `<p class="muted">加载失败：${escapeHtml(err.message || String(err))}</p>`;
+  }
+})();
+</script>
+</body>
+</html>

@@ -218,32 +218,65 @@ try {
                 }
             }
 
-            // 卖家添加商品
+            // 卖家添加商品（支持传入 category_id 或 category 名称）
             else if($data['action'] === "add_product"){
-                if(!isset($data['name'], $data['price'], $data['category_id'], $data['seller_id']))
+                if(!isset($data['name'], $data['price'], $data['seller_id']))
                     throw new Exception("缺少参数");
 
                 $name = $data['name'];
                 $price = floatval($data['price']);
-                $category_id = intval($data['category_id']);
                 $seller_id = intval($data['seller_id']);
                 $image = isset($data['image']) ? $data['image'] : '';
                 $description = isset($data['description']) ? $data['description'] : '';
+
+                // 解析 category：优先使用 category_id，否则使用 category 名称去查找或创建
+                $category_id = 0;
+                if(isset($data['category_id'])){
+                    $category_id = intval($data['category_id']);
+                } elseif(isset($data['category'])){
+                    $category_name = trim($data['category']);
+                    if($category_name !== ''){
+                        // 尝试按名称查找（不区分大小写）
+                        $stmtc = $conn->prepare("SELECT id FROM categories WHERE LOWER(name)=LOWER(?) LIMIT 1");
+                        if($stmtc){
+                            $stmtc->bind_param("s", $category_name);
+                            $stmtc->execute();
+                            $cres = $stmtc->get_result();
+                            if($r = $cres->fetch_assoc()){
+                                $category_id = intval($r['id']);
+                            }
+                        }
+                        // 若未找到则创建新分类（先确保 categories 表存在）
+                        if($category_id === 0){
+                            $conn->query("CREATE TABLE IF NOT EXISTS categories (
+                                id INT AUTO_INCREMENT PRIMARY KEY,
+                                name VARCHAR(255) NOT NULL UNIQUE
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            $stmti = $conn->prepare("INSERT INTO categories (name) VALUES (?)");
+                            if($stmti){
+                                $stmti->bind_param("s", $category_name);
+                                $stmti->execute();
+                                $category_id = $stmti->insert_id;
+                            }
+                        }
+                    }
+                }
+
+                $category_id = intval($category_id);
 
                 $stmt = $conn->prepare("INSERT INTO products (name, price, category_id, seller_id, image, description) VALUES (?,?,?,?,?,?)");
                 $stmt->bind_param("sdiiss",$name,$price,$category_id,$seller_id,$image,$description);
                 $stmt->execute();
                 echo json_encode(["status"=>"ok","message"=>"商品添加成功","product_id"=>$stmt->insert_id]);
             }
-            // 卖家更新商品
+            // 卖家更新商品（支持传入 category_id 或 category 名称）
             else if($data['action'] === "update_product"){
-                if(!isset($data['id'], $data['name'], $data['price'], $data['category_id'], $data['seller_id']))
+                if(!isset($data['id'], $data['name'], $data['price'], $data['seller_id']))
                     throw new Exception("缺少参数");
 
                 $id = intval($data['id']);
                 $name = $data['name'];
                 $price = floatval($data['price']);
-                $category_id = intval($data['category_id']);
                 $seller_id = intval($data['seller_id']);
                 $description = isset($data['description']) ? $data['description'] : '';
 
@@ -257,6 +290,39 @@ try {
                 if(!$product || $product['seller_id'] != $seller_id) {
                     throw new Exception("无权修改此商品");
                 }
+
+                // 解析 category：优先使用 category_id，否则使用 category 名称去查找或创建
+                $category_id = 0;
+                if(isset($data['category_id'])){
+                    $category_id = intval($data['category_id']);
+                } elseif(isset($data['category'])){
+                    $category_name = trim($data['category']);
+                    if($category_name !== ''){
+                        $stmtc = $conn->prepare("SELECT id FROM categories WHERE LOWER(name)=LOWER(?) LIMIT 1");
+                        if($stmtc){
+                            $stmtc->bind_param("s", $category_name);
+                            $stmtc->execute();
+                            $cres = $stmtc->get_result();
+                            if($r = $cres->fetch_assoc()){
+                                $category_id = intval($r['id']);
+                            }
+                        }
+                        if($category_id === 0){
+                            $conn->query("CREATE TABLE IF NOT EXISTS categories (
+                                id INT AUTO_INCREMENT PRIMARY KEY,
+                                name VARCHAR(255) NOT NULL UNIQUE
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            $stmti = $conn->prepare("INSERT INTO categories (name) VALUES (?)");
+                            if($stmti){
+                                $stmti->bind_param("s", $category_name);
+                                $stmti->execute();
+                                $category_id = $stmti->insert_id;
+                            }
+                        }
+                    }
+                }
+
+                $category_id = intval($category_id);
 
                 $stmt = $conn->prepare("UPDATE products SET name=?, price=?, category_id=?, description=? WHERE id=? AND seller_id=?");
                 $stmt->bind_param("sdisii", $name, $price, $category_id, $description, $id, $seller_id);

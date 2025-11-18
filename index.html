@@ -356,6 +356,7 @@ async function loadProducts(){
   data.forEach(p=>{
     container.innerHTML += `
       <div class="card">
+        ${p.image ? `<div style="width:100%;height:120px;overflow:hidden;border-radius:8px;margin-bottom:8px"><img src="${p.image}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : ''}
         <h4>${p.name}</h4>
         <p>RM ${p.price}</p>
         <button onclick='addToCart(${JSON.stringify(p)})'>加入购物车</button>
@@ -414,10 +415,13 @@ document.getElementById('imageInput').addEventListener('change', async function(
 });
 
 function addToCart(p){
-  const found = cart.find(i=>i.id===p.id);
-  if(found) found.quantity++;
-  else cart.push({...p, quantity:1});
-  document.getElementById('count').innerText = cart.reduce((a,b)=>a+b.quantity,0);
+  // normalize id and price to numbers to avoid type mismatch
+  const pid = Number(p.id);
+  const price = parseFloat(p.price) || 0;
+  const found = cart.find(i=> Number(i.id) === pid );
+  if(found) found.quantity = (parseInt(found.quantity)||0) + 1;
+  else cart.push({ ...p, id: pid, price: price, quantity: 1 });
+  updateCartUI();
 }
 
 // 渲染订单摘要（在结账时显示购物车内容）
@@ -427,25 +431,85 @@ function renderOrderSummary(){
   if(!cart || cart.length===0){
     container.innerHTML = '<p>购物车为空</p>';
     document.getElementById('orderSummary').style.display = 'none';
+    updateCartCount();
     return;
   }
   document.getElementById('orderSummary').style.display = 'block';
   let total = 0;
-  let html = '<table><thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr></thead><tbody>';
+  let html = '<table><thead><tr><th>商品</th><th>单价</th><th style="width:180px">数量</th><th>小计</th><th>操作</th></tr></thead><tbody>';
   cart.forEach(it=>{
     const subtotal = parseFloat(it.price) * parseInt(it.quantity);
     total += subtotal;
-    html += `<tr><td>${escapeHtml(it.name)}</td><td>RM ${parseFloat(it.price).toFixed(2)}</td><td>${it.quantity}</td><td>RM ${subtotal.toFixed(2)}</td></tr>`;
+    html += `<tr id="cart-row-${it.id}"><td>${escapeHtml(it.name)}</td><td>RM ${parseFloat(it.price).toFixed(2)}</td><td style="text-align:center">`+
+      `<button class="cart-decrease" data-product-id="${it.id}" style="padding:4px 8px">-</button>`+
+      ` <input class="cart-qty" data-product-id="${it.id}" type="number" min="1" value="${it.quantity}" style="width:56px;text-align:center;margin:0 6px">`+
+      `<button class="cart-increase" data-product-id="${it.id}" style="padding:4px 8px">+</button>`+
+    `</td><td>RM ${subtotal.toFixed(2)}</td><td><button class="cart-remove" data-product-id="${it.id}" style="background:#f44336;color:#fff;border:none;padding:6px 8px;border-radius:4px;cursor:pointer">删除</button></td></tr>`;
   });
   html += `</tbody></table><div class="total">总计: RM ${total.toFixed(2)}</div>`;
   container.innerHTML = html;
+  updateCartCount();
+  // Attach event listeners (use delegation-like binding)
+  container.querySelectorAll('.cart-decrease').forEach(b=> b.addEventListener('click', e=>{
+    const id = parseInt(b.getAttribute('data-product-id'));
+    changeQuantity(id, -1);
+  }));
+  container.querySelectorAll('.cart-increase').forEach(b=> b.addEventListener('click', e=>{
+    const id = parseInt(b.getAttribute('data-product-id'));
+    changeQuantity(id, 1);
+  }));
+  container.querySelectorAll('.cart-qty').forEach(inp=> inp.addEventListener('change', e=>{
+    const id = parseInt(inp.getAttribute('data-product-id'));
+    setQuantity(id, inp.value);
+  }));
+  container.querySelectorAll('.cart-remove').forEach(b=> b.addEventListener('click', e=>{
+    const id = parseInt(b.getAttribute('data-product-id'));
+    removeFromCart(id);
+  }));
+}
+
+function changeQuantity(productId, delta){
+  const item = cart.find(c=> Number(c.id) === Number(productId));
+  if(!item) return;
+  item.quantity = Math.max(1, (parseInt(item.quantity) || 0) + delta);
+  updateCartUI();
+}
+
+function setQuantity(productId, val){
+  let q = parseInt(val);
+  if(isNaN(q) || q < 1) q = 1;
+  const item = cart.find(c=> Number(c.id) === Number(productId));
+  if(!item) return;
+  item.quantity = q;
+  updateCartUI();
+}
+
+function removeFromCart(productId){
+  cart = cart.filter(c=> Number(c.id) !== Number(productId));
+  updateCartUI();
+}
+
+function updateCartUI(){
+  // update count display and order summary
+  updateCartCount();
+  renderOrderSummary();
+  // debug: log cart state and total
+  try{
+    const total = cart.reduce((s,i)=>s + (parseFloat(i.price)||0) * (parseInt(i.quantity)||0), 0);
+    console.log('Cart debug', cart, 'total=', total);
+  } catch(e){ console.log('Cart debug error', e); }
+}
+
+function updateCartCount(){
+  const countEl = document.getElementById('count');
+  if(countEl) countEl.innerText = cart.reduce((a,b)=>a+b.quantity,0);
 }
 
 // 简单转义文本，防止 XSS（购物车数据来自本站）
 function escapeHtml(str){
   if(!str) return '';
   return String(str).replace(/[&<>"']/g, function(s){
-    return {'&':'&a mp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s];
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s];
   });
 }
 

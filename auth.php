@@ -111,6 +111,28 @@ if ($action === "login") {
     }
 }
 
+/* -------------------- 切换用户角色（buyer <-> seller） -------------------- */
+if ($action === "switch_role") {
+    $user_id = intval($input["user_id"] ?? 0);
+    $new_role = trim($input["role"] ?? "");
+    if (!$user_id || !in_array($new_role, ["buyer", "seller"])) {
+        json_out(["status"=>"fail","message"=>"缺少参数或角色无效"]);
+    }
+
+    $stmt = $conn->prepare("UPDATE users SET role=? WHERE id=?");
+    $stmt->bind_param("si", $new_role, $user_id);
+    if (!$stmt->execute()) {
+        json_out(["status"=>"fail","message"=>"更新角色失败"]);
+    }
+
+    // 返回更新后的用户信息（不包含敏感字段）
+    $stmt2 = $conn->prepare("SELECT id, username, role FROM users WHERE id=? LIMIT 1");
+    $stmt2->bind_param("i", $user_id);
+    $stmt2->execute();
+    $user = $stmt2->get_result()->fetch_assoc();
+    json_out(["status"=>"ok","user"=>$user]);
+}
+
 /* -------------------- 请求密码重置（发邮件：6位验证码） -------------------- */
 if ($action === "request_password_reset") {
     $u = trim($input["username"] ?? "");

@@ -384,18 +384,19 @@ header .user-info button:hover {
         </div>
 
         <div class="form-group">
-          <label for="productCategory">分类 *</label>
-          <select id="productCategory" required>
-            <option value="">请选择分类</option>
-            <option value="1">电子产品</option>
-            <option value="2">配件</option>
-            <option value="3">生活用品</option>
-          </select>
+          <label for="productCategory">分类 *（可自定义）</label>
+          <input type="text" id="productCategory" placeholder="输入分类名称，例如：电子产品" required>
         </div>
 
         <div class="form-group">
           <label for="productDesc">商品描述</label>
           <textarea id="productDesc" placeholder="输入商品描述（可选）"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="productImage">商品图片（可选）</label>
+          <input type="file" id="productImage" accept="image/*">
+          <div id="imagePreview" style="margin-top:8px"></div>
         </div>
 
         <div class="btn-group">
@@ -407,6 +408,7 @@ header .user-info button:hover {
       <div class="nav-links">
         <a href="index.html">🏠 返回首页</a>
         <a href="orders.html">📦 查看订单</a>
+        <a href="seller_sales.html">📈 销售记录</a>
       </div>
     </div>
 
@@ -596,7 +598,7 @@ async function editProduct(productId) {
   editingProductId = productId;
   document.getElementById('productName').value = product.name || '';
   document.getElementById('productPrice').value = product.price || '';
-  document.getElementById('productCategory').value = product.category_id || '';
+  document.getElementById('productCategory').value = product.category_name || '';
   document.getElementById('productDesc').value = product.description || '';
   
   // 更改按钮状态
@@ -606,6 +608,11 @@ async function editProduct(productId) {
   
   // 滚动到表单
   document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+  // If product has an image, show preview placeholder
+  const imgPreview = document.getElementById('imagePreview');
+  const imgInput = document.getElementById('productImage');
+  if (imgPreview) imgPreview.innerHTML = product.image ? `<img src="${product.image}" style="max-width:140px;max-height:90px;border-radius:6px;">` : '';
+  if (imgInput) imgInput.value = '';
 }
 
 // 取消编辑
@@ -615,6 +622,7 @@ function cancelEdit() {
   document.getElementById('productPrice').value = '';
   document.getElementById('productCategory').value = '';
   document.getElementById('productDesc').value = '';
+  const img = document.getElementById('productImage'); if(img) img.value = '';
   
   document.getElementById('formTitle').textContent = '➕ 添加商品';
   document.getElementById('submitBtn').textContent = '添加商品';
@@ -627,10 +635,10 @@ function cancelEdit() {
 async function addOrUpdateProduct() {
   const name = document.getElementById('productName').value.trim();
   const price = parseFloat(document.getElementById('productPrice').value);
-  const category_id = parseInt(document.getElementById('productCategory').value);
+  const category = document.getElementById('productCategory').value.trim();
   const description = document.getElementById('productDesc').value.trim();
 
-  if (!name || !price || !category_id) {
+  if (!name || !price || !category) {
     showAlert('请填写必填项：商品名称、价格、分类', 'error');
     return;
   }
@@ -645,10 +653,30 @@ async function addOrUpdateProduct() {
     action,
     name,
     price,
-    category_id,
+    category, // send category name; backend will map to id
     seller_id: currentUser.id,
     description
   };
+
+  // If an image file is selected, upload it first to get a path
+  const fileInput = document.getElementById('productImage');
+  if (fileInput && fileInput.files && fileInput.files[0]) {
+    try {
+      const fd = new FormData();
+      fd.append('image', fileInput.files[0]);
+      const upRes = await fetch('upload.php', { method: 'POST', body: fd });
+      const upJson = await upRes.json();
+      if (upJson && upJson.status === 'ok' && upJson.path) {
+        productData.image = upJson.path;
+      } else {
+        showAlert((upJson && upJson.message) ? '图片上传失败：' + upJson.message : '图片上传失败', 'error');
+        return;
+      }
+    } catch (e) {
+      showAlert('图片上传失败：' + e.message, 'error');
+      return;
+    }
+  }
 
   if (editingProductId) {
     productData.id = editingProductId;
@@ -766,6 +794,18 @@ document.addEventListener('DOMContentLoaded', function() {
   loadMyProducts().then(() => {
     loadSellerStats();
   });
+  // image input preview
+  const imgInput = document.getElementById('productImage');
+  if (imgInput) {
+    imgInput.addEventListener('change', function(e){
+      const p = document.getElementById('imagePreview');
+      p.innerHTML = '';
+      const f = this.files[0];
+      if (!f) return;
+      const url = URL.createObjectURL(f);
+      p.innerHTML = `<img src="${url}" style="max-width:140px;max-height:90px;border-radius:6px;">`;
+    });
+  }
 });
 
 // 加载卖家统计（商品总数、总销售额）
@@ -799,8 +839,12 @@ function renderProductHTML(p) {
     `;
   }
 
+  // thumbnail HTML
+  const imgHtml = p.image ? `<div style="margin-right:12px;"><img src="${escapeHtml(p.image)}" style="width:140px;height:90px;object-fit:cover;border-radius:6px;display:block"></div>` : '';
+
   return `
   <div class="product-item" id="prod-${p.id}">
+    ${imgHtml}
     <div class="product-info">
       <h3>${escapeHtml(p.name)}</h3>
       <p>${escapeHtml(p.description || '暂无描述')}</p>
