@@ -2,6 +2,18 @@
 header("Content-Type: application/json");
 include "db.php";
 
+// Ensure addresses table exists and has columns for phone and note
+$conn->query("CREATE TABLE IF NOT EXISTS addresses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    recipient_name VARCHAR(255),
+    recipient_address TEXT,
+    phone VARCHAR(64) DEFAULT NULL,
+    note TEXT DEFAULT NULL,
+    is_default TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 try {
@@ -139,6 +151,21 @@ try {
                 break;
             }
 
+            // 列出所有分类（供前端动态渲染分类按钮）
+            if(isset($_GET['action']) && $_GET['action'] === 'list_categories'){
+                // safe: if categories table does not exist, return empty array
+                try {
+                    $res = $conn->query("SELECT id, name FROM categories ORDER BY name ASC");
+                    if($res) echo json_encode($res->fetch_all(MYSQLI_ASSOC));
+                    else echo json_encode([]);
+                } catch(Exception $e) {
+                    echo json_encode([]);
+                }
+                break;
+            }
+
+            
+
             
 
             // 获取所有商品
@@ -204,17 +231,72 @@ try {
                 $user_id = intval($data['user_id']);
                 $recipient_name = $data['recipient_name'];
                 $recipient_address = $data['recipient_address'];
+                $phone = isset($data['phone']) ? $data['phone'] : null;
+                $note = isset($data['note']) ? $data['note'] : null;
                 $is_default = isset($data['is_default']) && $data['is_default'] ? 1 : 0;
                 if($is_default){
                     // 取消该用户其他默认地址
                     $conn->query("UPDATE addresses SET is_default=0 WHERE user_id=$user_id");
                 }
-                $stmt = $conn->prepare("INSERT INTO addresses (user_id, recipient_name, recipient_address, is_default) VALUES (?,?,?,?)");
-                $stmt->bind_param("issi", $user_id, $recipient_name, $recipient_address, $is_default);
+                $stmt = $conn->prepare("INSERT INTO addresses (user_id, recipient_name, recipient_address, phone, note, is_default) VALUES (?,?,?,?,?,?)");
+                $stmt->bind_param("issssi", $user_id, $recipient_name, $recipient_address, $phone, $note, $is_default);
                 if($stmt->execute()){
                     echo json_encode(["status"=>"ok","message"=>"地址添加成功"]);
                 }else{
                     echo json_encode(["status"=>"fail","message"=>"地址添加失败"]);
+                }
+            }
+            // 更新已有地址
+            else if($data['action'] === "update_address"){
+                if(!isset($data['user_id'], $data['id'], $data['recipient_name'], $data['recipient_address']))
+                    throw new Exception("缺少地址参数");
+                $user_id = intval($data['user_id']);
+                $addr_id = intval($data['id']);
+                $recipient_name = $data['recipient_name'];
+                $recipient_address = $data['recipient_address'];
+                $phone = isset($data['phone']) ? $data['phone'] : null;
+                $note = isset($data['note']) ? $data['note'] : null;
+                $is_default = isset($data['is_default']) && $data['is_default'] ? 1 : 0;
+
+                // Verify ownership
+                $stmtv = $conn->prepare("SELECT user_id FROM addresses WHERE id = ? LIMIT 1");
+                $stmtv->bind_param("i", $addr_id);
+                $stmtv->execute();
+                $rv = $stmtv->get_result()->fetch_assoc();
+                if(!$rv || intval($rv['user_id']) !== $user_id) throw new Exception('无权修改此地址');
+
+                if($is_default){
+                    $conn->query("UPDATE addresses SET is_default=0 WHERE user_id=$user_id");
+                }
+
+                $stmtu = $conn->prepare("UPDATE addresses SET recipient_name=?, recipient_address=?, phone=?, note=?, is_default=? WHERE id=? AND user_id=?");
+                $stmtu->bind_param("ssssiii", $recipient_name, $recipient_address, $phone, $note, $is_default, $addr_id, $user_id);
+                if($stmtu->execute()){
+                    echo json_encode(["status"=>"ok","message"=>"地址更新成功"]);
+                } else {
+                    echo json_encode(["status"=>"fail","message"=>"地址更新失败"]);
+                }
+            }
+
+            // 删除地址
+            else if($data['action'] === "delete_address"){
+                if(!isset($data['user_id'], $data['id'])) throw new Exception("缺少参数");
+                $user_id = intval($data['user_id']);
+                $addr_id = intval($data['id']);
+
+                // Verify ownership
+                $stmtv = $conn->prepare("SELECT user_id FROM addresses WHERE id = ? LIMIT 1");
+                $stmtv->bind_param("i", $addr_id);
+                $stmtv->execute();
+                $rv = $stmtv->get_result()->fetch_assoc();
+                if(!$rv || intval($rv['user_id']) !== $user_id) throw new Exception('无权删除此地址');
+
+                $std = $conn->prepare("DELETE FROM addresses WHERE id=? AND user_id=?");
+                $std->bind_param("ii", $addr_id, $user_id);
+                if($std->execute()){
+                    echo json_encode(["status"=>"ok","message"=>"地址已删除"]);
+                } else {
+                    echo json_encode(["status"=>"fail","message"=>"删除失败"]);
                 }
             }
 
@@ -423,6 +505,60 @@ try {
                 } else {
                     throw new Exception("认领失败");
                 }
+            }
+            // 删除商品中的单个媒体文件（图片/视频/链接）
+            else if($data['action'] === 'remove_media'){
+                if(!isset($data['id'], $data['seller_id'], $data['media'])) throw new Exception('缺少参数');
+                $id = intval($data['id']);
+                $seller_id = intval($data['seller_id']);
+                $media = $data['media'];
+
+                // 验证商品与归属
+                $stmt = $conn->prepare("SELECT seller_id, image FROM products WHERE id = ? LIMIT 1");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $row = $stmt->get_result()->fetch_assoc();
+                if(!$row) throw new Exception('商品不存在');
+                if(intval($row['seller_id']) !== $seller_id) throw new Exception('无权操作');
+
+                $imgs = $row['image'];
+                $arr = [];
+                if(is_null($imgs) || $imgs === '') {
+                    $arr = [];
+                } else {
+                    if(is_string($imgs) && trim($imgs) !== '' && strpos(trim($imgs), '[') === 0){
+                        $parsed = json_decode($imgs, true);
+                        if(is_array($parsed)) $arr = $parsed; else $arr = [$imgs];
+                    } else {
+                        $arr = [$imgs];
+                    }
+                }
+
+                // remove matches (exact string match after trim)
+                $new = array_values(array_filter($arr, function($v) use($media){ return trim($v) !== trim($media); }));
+
+                // prepare new image field
+                if(count($new) === 0) $newField = '';
+                elseif(count($new) === 1) $newField = $new[0];
+                else $newField = json_encode($new, JSON_UNESCAPED_UNICODE);
+
+                $stmt2 = $conn->prepare("UPDATE products SET image = ? WHERE id = ? AND seller_id = ?");
+                $stmt2->bind_param("sii", $newField, $id, $seller_id);
+                if(!$stmt2->execute()) throw new Exception('更新产品媒体失败');
+
+                // 尝试删除本地文件（仅删除 uploads 目录下的文件）
+                try{
+                    $candidate = str_replace(array('../','..\\'), '', $media);
+                    $candidate = ltrim($candidate, '/\\');
+                    $uploadsPath = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR;
+                    $full = __DIR__ . DIRECTORY_SEPARATOR . $candidate;
+                    if(stripos($full, $uploadsPath) === 0 && file_exists($full)){
+                        @unlink($full);
+                    }
+                } catch(Exception $e){ /* ignore unlink errors */ }
+
+                echo json_encode(['status'=>'ok','message'=>'媒体已删除','image'=>$newField]);
+                break;
             }
             // 强制认领商品（覆盖原有 seller_id），并记录原始归属到 product_claims 表（如果存在）
             else if($data['action'] === "force_claim_product"){

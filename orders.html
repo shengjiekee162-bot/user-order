@@ -4,21 +4,39 @@
   <meta charset="utf-8">
   <title>我的订单</title>
   <style>
-    body{font-family: 'Segoe UI', Arial, sans-serif; background:#fafafa; margin:0; padding:20px}
-    header{background:#f53d2d;color:#fff;padding:12px 20px;border-radius:6px;margin-bottom:16px}
-    header h1{margin:0;font-size:18px}
+    :root{
+      --bg-1: #040612;
+      --bg-2: #0b1230;
+      --accent-a: #00d4ff;
+      --accent-b: #b464ff;
+      --muted: #98a3b8;
+      --panel: #071126;
+    }
+
+    html,body{height:100%;}
+    body{font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial; margin:0; padding:28px; background: radial-gradient(1200px 600px at 10% 10%, #07102a 0%, #040612 25%, #020012 60%), linear-gradient(180deg,var(--bg-1),var(--bg-2)); color:#eaf6ff}
+
+    header{background:linear-gradient(90deg, rgba(138,59,255,0.12), rgba(0,212,255,0.06));color:#e8f7ff;padding:14px 20px;border-radius:10px;box-shadow:0 8px 30px rgba(138,59,255,0.06);margin-bottom:18px}
+    header h1{margin:0;font-size:18px;color:#fff}
+
     .container{max-width:1000px;margin:0 auto}
-    .order-card{background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.08);margin-bottom:12px}
-    .order-card h4{margin:0 0 8px;color:#f53d2d}
-    .items{white-space:pre-line;background:#f8f8f8;padding:10px;border-radius:6px;margin-bottom:8px}
-    .meta{color:#666;font-size:0.9em}
-    .login-prompt{background:#fff;padding:20px;border-radius:8px;text-align:center}
-    a.button{display:inline-block;padding:8px 12px;background:#f53d2d;color:#fff;border-radius:6px;text-decoration:none}
-    .detail-modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center}
-    .detail-content{background:#fff;padding:16px;border-radius:8px;max-width:700px;width:90%;}
-    .close-btn{background:#eee;border:none;padding:6px 8px;border-radius:4px;cursor:pointer}
+
+    .order-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.22));padding:16px;border-radius:10px;box-shadow:0 10px 30px rgba(3,6,20,0.6);margin-bottom:12px;border:1px solid rgba(138,59,255,0.06)}
+    .order-card h4{margin:0 0 8px;color:var(--accent-a);font-size:16px}
+    .items{white-space:pre-line;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;margin-bottom:8px;color:var(--muted)}
+    .meta{color:var(--muted);font-size:0.95em}
+    .login-prompt{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.16));padding:20px;border-radius:10px;text-align:center;border:1px solid rgba(138,59,255,0.06)}
+    a.button{display:inline-block;padding:8px 12px;background:linear-gradient(90deg,var(--accent-a),var(--accent-b));color:#031026;border-radius:8px;text-decoration:none;font-weight:700}
+
+    .detail-modal{position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:2000}
+    .detail-content{background:linear-gradient(180deg,#071126,#041026);padding:18px;border-radius:12px;max-width:760px;width:92%;box-shadow:0 30px 80px rgba(3,6,20,0.9);border:1px solid rgba(138,59,255,0.08);color:#eaf6ff}
+    .close-btn{background:#0b1220;color:var(--accent-a);border:none;padding:8px 10px;border-radius:8px;cursor:pointer}
+
     table{width:100%;border-collapse:collapse;margin-top:8px}
-    th,td{border:1px solid #ddd;padding:8px;text-align:left}
+    th,td{border:1px solid rgba(255,255,255,0.04);padding:10px;text-align:left;color:var(--muted)}
+    th{background:rgba(255,255,255,0.02);color:#eaf6ff}
+
+    @media (max-width:700px){ body{padding:12px} .detail-content{width:96%} }
   </style>
 </head>
 <body>

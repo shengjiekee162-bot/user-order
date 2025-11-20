@@ -4,11 +4,29 @@
 <meta charset="UTF-8">
 <title>登录 - Shopee Clone</title>
 <style>
-body { font-family: Arial; background: #f7f7f7; display:flex; justify-content:center; align-items:center; height:100vh; }
-form { background:white; padding:30px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
-input { display:block; width:250px; margin:10px 0; padding:8px; }
-button { background:#f53d2d; color:white; border:none; padding:10px; width:100%; cursor:pointer; }
-a { display:block; margin-top:10px; text-align:center; }
+  :root{
+    --bg-1: #040612;
+    --bg-2: #0b1230;
+    --accent-a: #00d4ff;
+    --accent-b: #b464ff;
+    --card-bg: rgba(255,255,255,0.03);
+    --muted: #98a3b8;
+  }
+
+  html,body{height:100%;}
+  body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial; background: radial-gradient(circle at 10% 10%, #07102a, #040612 40%), linear-gradient(180deg,var(--bg-1),var(--bg-2)); display:flex; justify-content:center; align-items:center; padding:28px; color:#eaf6ff }
+
+  form { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.22)); padding:30px; border-radius:14px; box-shadow: 0 18px 50px rgba(2,6,20,0.7); border:1px solid rgba(180,100,255,0.08); width:360px }
+
+  h2{ color: var(--accent-a); margin:0 0 10px }
+
+  input { display:block; width:100%; margin:10px 0; padding:12px; border-radius:10px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); color:#eaf6ff }
+
+  button { background: linear-gradient(90deg,var(--accent-a),var(--accent-b)); color:#031026; border:none; padding:10px; width:100%; cursor:pointer; border-radius:10px; font-weight:600 }
+
+  a { display:block; margin-top:10px; text-align:center; color:var(--muted); text-decoration:none }
+
+  .accent-link{ color: var(--accent-b); font-weight:700; text-decoration:none }
 </style>
 </head>
 <body>
@@ -20,7 +38,7 @@ a { display:block; margin-top:10px; text-align:center; }
   <button type="submit" data-i18n="login.submit">登录</button>
   <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
     <a href="register.html">没有账号？去注册</a>
-    <a href="forgot.html" style="color:#f53d2d; font-weight:bold;" data-i18n="header.forgot">忘记密码？</a>
+    <a href="forgot.html" class="accent-link" data-i18n="header.forgot">忘记密码？</a>
   </div>
 </form>
 

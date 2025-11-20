@@ -5,342 +5,44 @@
 <title>卖家中心 - 产品管理</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { 
-  font-family: 'Segoe UI', Arial, sans-serif; 
-  background: #f5f5f5; 
-  margin: 0; 
-  padding: 0;
+:root{
+  --bg:#040616; --panel:rgba(10,14,28,0.6); --muted:#9fb6d9; --accent:#00e6ff; --accent-2:#8a3bff; --glow: 0 8px 30px rgba(138,59,255,0.12), 0 4px 16px rgba(0,230,255,0.06);
 }
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-header {
-  background: #f53d2d;
-  color: white;
-  padding: 15px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-header h1 {
-  margin: 0;
-  font-size: 24px;
-}
-
-header .user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-header .user-info button {
-  background: white;
-  color: #f53d2d;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-header .user-info button:hover {
-  background: #fce4e0;
-}
-
-.main-content {
-  display: flex;
-  gap: 20px;
-}
-
-.sidebar {
-  width: 300px;
-}
-
-.form-card {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
-}
-
-.form-card h2 {
-  margin-top: 0;
-  color: #f53d2d;
-  font-size: 20px;
-  border-bottom: 2px solid #f53d2d;
-  padding-bottom: 10px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #333;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: inherit;
-  box-sizing: border-box;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #f53d2d;
-  box-shadow: 0 0 5px rgba(245, 61, 45, 0.3);
-}
-
-.btn-group {
-  display: flex;
-  gap: 10px;
-}
-
-.btn {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-primary {
-  background: #f53d2d;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #d42828;
-}
-
-.btn-secondary {
-  background: #ddd;
-  color: #333;
-}
-
-.btn-secondary:hover {
-  background: #bbb;
-}
-
-.content {
-  flex: 1;
-}
-
-.products-card {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.products-card h2 {
-  margin-top: 0;
-  color: #f53d2d;
-  font-size: 20px;
-  border-bottom: 2px solid #f53d2d;
-  padding-bottom: 10px;
-  margin-bottom: 15px;
-}
-
-.product-item {
-  background: #f9f9f9;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 6px;
-  border-left: 4px solid #f53d2d;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.product-info {
-  flex: 1;
-}
-
-.product-info h3 {
-  margin: 0 0 5px 0;
-  color: #333;
-}
-
-.product-info p {
-  margin: 3px 0;
-  color: #666;
-  font-size: 14px;
-}
-
-.product-price {
-  font-size: 18px;
-  font-weight: bold;
-  color: #f53d2d;
-  margin: 5px 0;
-}
-
-.product-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.product-actions button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s;
-}
-
-.btn-edit {
-  background: #4CAF50;
-  color: white;
-}
-
-.btn-edit:hover {
-  background: #45a049;
-}
-
-.btn-delete {
-  background: #f44336;
-  color: white;
-}
-
-.btn-delete:hover {
-  background: #da190b;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: #999;
-}
-
-.empty-state svg {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 15px;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .main-content {
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    width: 100%;
-  }
-  
-  .product-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .product-actions {
-    width: 100%;
-  }
-  
-  .product-actions button {
-    flex: 1;
-  }
-}
-
-.alert {
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 4px;
-  display: none;
-}
-
-.alert.success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-  display: block;
-}
-
-.alert.error {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  display: block;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  background: white;
-  padding: 15px;
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-}
-
-.stat-label {
-  color: #999;
-  font-size: 12px;
-  margin-bottom: 5px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #f53d2d;
-}
-
-.nav-links {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #ddd;
-}
-
-.nav-links a {
-  display: block;
-  padding: 10px;
-  margin-bottom: 5px;
-  background: white;
-  text-decoration: none;
-  color: #f53d2d;
-  border-radius: 4px;
-  text-align: center;
-  font-weight: bold;
-  transition: all 0.3s;
-}
-
-.nav-links a:hover {
-  background: #f53d2d;
-  color: white;
-}
+*{box-sizing:border-box}
+body{font-family:Inter,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#05060a,#07101a);color:var(--muted);margin:0;padding:0}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+.header{background:linear-gradient(90deg, rgba(138,59,255,0.12), rgba(0,230,255,0.08));color:#e8f7ff;padding:14px 20px;border-radius:10px;box-shadow:var(--glow);display:flex;justify-content:space-between;align-items:center}
+.header h1{margin:0;color:#fff}
+.main-content{display:flex;gap:20px;margin-top:18px}
+.sidebar{width:320px}
+.form-card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:20px;border-radius:12px;box-shadow:var(--glow);border:1px solid rgba(255,255,255,0.03)}
+.form-card h2{margin-top:0;color:var(--accent);font-size:18px;text-shadow:0 2px 10px rgba(0,230,255,0.06)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;margin-bottom:6px;color:var(--muted)}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#e6f7ff}
+.btn-group{display:flex;gap:10px}
+.btn{flex:1;padding:12px;border-radius:8px;border:none;cursor:pointer}
+.btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#041226;font-weight:800;box-shadow:0 12px 30px rgba(0,230,255,0.08)}
+.btn-secondary{background:#0f1724;color:var(--muted);border:1px solid rgba(255,255,255,0.02)}
+.products-card{flex:1;padding:18px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);box-shadow:0 8px 30px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.03)}
+.product-item{display:flex;gap:12px;align-items:center;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-bottom:12px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent)}
+.product-item img{width:140px;height:90px;object-fit:cover;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
+.product-info h3{margin:0;color:#e8f7ff;text-shadow:0 1px 8px rgba(138,59,255,0.04)}
+.product-info p{margin:6px 0;color:var(--muted)}
+.product-price{color:var(--accent);font-weight:800}
+.product-actions button{padding:8px 10px;border-radius:8px;border:none;cursor:pointer}
+.btn-edit{background:#10b981;color:#041226}
+.btn-delete{background:#ef4444;color:#fff}
+.empty-state{padding:40px;text-align:center;color:#9aa4bf}
+/* Sales records styling (uses site theme variables) */
+.sale-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent); padding:14px; border-radius:10px; margin-bottom:12px; border:1px solid rgba(255,255,255,0.03); color:#e6f7ff}
+.sale-header{font-weight:700; color:var(--accent-2); margin-bottom:6px}
+.sale-meta{color:var(--muted); margin-top:6px}
+.sale-table{width:100%; margin-top:10px; border-collapse:collapse}
+.sale-table th{text-align:left; padding:10px; background:rgba(255,255,255,0.02); color:var(--muted); font-weight:600}
+.sale-table td{padding:10px; border-top:1px solid rgba(255,255,255,0.03); color:#e6f7ff}
+.sale-empty{color:var(--muted)}
+@media (max-width:900px){.main-content{flex-direction:column}.sidebar{width:100%}}
 </style>
 </head>
 <body>
@@ -385,7 +87,8 @@ header .user-info button:hover {
 
         <div class="form-group">
           <label for="productCategory">分类 *（可自定义）</label>
-          <input type="text" id="productCategory" placeholder="输入分类名称，例如：电子产品" required>
+          <input type="text" id="productCategory" list="categoriesList" placeholder="输入分类名称，例如：电子产品" required>
+          <datalist id="categoriesList"></datalist>
         </div>
 
         <div class="form-group">
@@ -394,9 +97,9 @@ header .user-info button:hover {
         </div>
 
         <div class="form-group">
-          <label for="productImage">商品图片（可选）</label>
-          <input type="file" id="productImage" accept="image/*">
-          <div id="imagePreview" style="margin-top:8px"></div>
+          <label for="productImage">商品图片 / 视频（可选，多选）</label>
+          <input type="file" id="productImage" accept="image/*,video/*" multiple>
+          <div id="imagePreview" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap"></div>
         </div>
 
         <div class="btn-group">
@@ -521,10 +224,10 @@ async function loadSellerSales(){
   });
   let html = '';
   Object.values(groups).forEach(g=>{
-    html += `<div style="background:#fff;padding:12px;border-radius:6px;margin-bottom:10px;">
-      <div style="font-weight:bold;color:#f53d2d">订单 #${g.order} — 买家: ${escapeHtml(g.buyer||'未知')} — ${g.date}</div>
-      <div style="margin-top:8px">支付: ${escapeHtml(g.payment_method||'')} / ${escapeHtml(g.payment_status||'')}</div>
-      <table style="width:100%;margin-top:8px;border-collapse:collapse"><tr style="background:#f3f3f3"><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr>`;
+    html += `<div class="sale-card">
+      <div class="sale-header">订单 #${g.order} — 买家: ${escapeHtml(g.buyer||'未知')} — ${g.date}</div>
+      <div class="sale-meta">支付: ${escapeHtml(g.payment_method||'')} / ${escapeHtml(g.payment_status||'')}</div>
+      <table class="sale-table"><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr>`;
     g.items.forEach(it=>{
       const subtotal = (parseFloat(it.product_price) * parseInt(it.quantity)).toFixed(2);
       html += `<tr><td>${escapeHtml(it.product_name)}</td><td>RM ${parseFloat(it.product_price).toFixed(2)}</td><td>${it.quantity}</td><td>RM ${subtotal}</td></tr>`;
@@ -545,7 +248,7 @@ async function loadSellerProductStats(){
     area.innerHTML = '<p style="color:#999;">暂无销售统计</p>';
     return;
   }
-  let html = `<table><tr><th>商品</th><th>已售数量</th><th>总收入 (RM)</th></tr>`;
+  let html = `<table class="sale-table"><tr><th>商品</th><th>已售数量</th><th>总收入 (RM)</th></tr>`;
   res.forEach(r=>{
     html += `<tr><td>${escapeHtml(r.product_name)}</td><td>${r.total_sold}</td><td>RM ${parseFloat(r.total_revenue).toFixed(2)}</td></tr>`;
   });
@@ -610,10 +313,43 @@ async function editProduct(productId) {
   
   // 滚动到表单
   document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
-  // If product has an image, show preview placeholder
+  // If product has media, show preview placeholders (support JSON array and YouTube)
   const imgPreview = document.getElementById('imagePreview');
   const imgInput = document.getElementById('productImage');
-  if (imgPreview) imgPreview.innerHTML = product.image ? `<img src="${product.image}" style="max-width:140px;max-height:90px;border-radius:6px;">` : '';
+  if (imgPreview) {
+    imgPreview.innerHTML = '';
+    if (product.image) {
+      try {
+        let imgs = product.image;
+        if (typeof imgs === 'string' && imgs.trim().startsWith('[')) imgs = JSON.parse(imgs);
+        if (!Array.isArray(imgs)) imgs = [imgs];
+        const existingYt = [];
+        imgs.forEach(src => {
+          if (!src) return;
+          const s = String(src).replace(/\r?\n/g,'').trim();
+          const id = extractYtId(s);
+          if (id) {
+            existingYt.push(s);
+            imgPreview.insertAdjacentHTML('beforeend', `<iframe src="https://www.youtube.com/embed/${id}" style="max-width:220px;max-height:140px;border:0;margin-right:8px" frameborder="0" allowfullscreen></iframe>`);
+            } else {
+              const lower = s.toLowerCase();
+              if (lower.match(/\.(mp4|webm|ogg|mov)$/) || s.indexOf('uploads/') === 0) {
+                imgPreview.insertAdjacentHTML('beforeend', `<div style="position:relative;display:inline-block;margin-right:8px"><video src="${escapeHtml(s)}" style="max-width:140px;max-height:90px;border-radius:6px;display:block" controls></video><button onclick="removeUploadedMedia(${product.id}, '${encodeURIComponent(s)}')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:12px;width:24px;height:24px;cursor:pointer">✖</button></div>`);
+              } else {
+                imgPreview.insertAdjacentHTML('beforeend', `<div style="position:relative;display:inline-block;margin-right:8px"><img src="${escapeHtml(s)}" style="max-width:140px;max-height:90px;border-radius:6px;display:block"><button onclick="removeUploadedMedia(${product.id}, '${encodeURIComponent(s)}')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:12px;width:24px;height:24px;cursor:pointer">✖</button></div>`);
+              }
+          }
+        });
+        if (existingYt.length > 0) {
+          const ytInputEl = document.getElementById('youtubeLinks');
+          const prev = (ytInputEl.value || '').trim();
+          const merged = prev ? (prev + '\n' + existingYt.join('\n')) : existingYt.join('\n');
+          ytInputEl.value = merged;
+          ytInputEl.dispatchEvent(new Event('input'));
+        }
+      } catch(e){ /* ignore parse errors */ }
+    }
+  }
   if (imgInput) imgInput.value = '';
 }
 
@@ -660,24 +396,39 @@ async function addOrUpdateProduct() {
     description
   };
 
-  // If an image file is selected, upload it first to get a path
+  // If image/video files are selected, upload them first to get paths (support multiple)
   const fileInput = document.getElementById('productImage');
-  if (fileInput && fileInput.files && fileInput.files[0]) {
+  let collectedPaths = [];
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
     try {
       const fd = new FormData();
-      fd.append('image', fileInput.files[0]);
+      Array.from(fileInput.files).forEach(f => fd.append('files[]', f));
       const upRes = await fetch('upload.php', { method: 'POST', body: fd });
       const upJson = await upRes.json();
-      if (upJson && upJson.status === 'ok' && upJson.path) {
-        productData.image = upJson.path;
+      if (upJson && upJson.status === 'ok' && (upJson.paths || upJson.path)) {
+        const paths = upJson.paths ? upJson.paths : [upJson.path];
+        collectedPaths = collectedPaths.concat(paths);
       } else {
-        showAlert((upJson && upJson.message) ? '图片上传失败：' + upJson.message : '图片上传失败', 'error');
+        showAlert((upJson && upJson.message) ? '媒体文件上传失败：' + upJson.message : '媒体文件上传失败', 'error');
         return;
       }
     } catch (e) {
-      showAlert('图片上传失败：' + e.message, 'error');
+      showAlert('媒体文件上传失败：' + e.message, 'error');
       return;
     }
+  }
+
+  // collect YouTube links (split by newline or comma)
+  const ytInput = document.getElementById('youtubeLinks');
+  if (ytInput && ytInput.value.trim()){
+    const raw = ytInput.value.trim();
+    const parts = raw.split(/[,\n]+/).map(s=>s.trim()).filter(Boolean);
+    parts.forEach(u=>{ const id = extractYtId(u); if(id) collectedPaths.push(u); });
+  }
+
+  // if we have any collected media (uploads or youtube links), store as JSON string
+  if(collectedPaths.length > 0){
+    productData.image = JSON.stringify(collectedPaths);
   }
 
   if (editingProductId) {
@@ -709,6 +460,9 @@ async function addOrUpdateProduct() {
     } else {
       await loadMyProducts();
     }
+    // refresh local category suggestions and notify other tabs
+    try{ loadCategoryOptions(); }catch(e){}
+    try{ localStorage.setItem('categoriesUpdated', Date.now()); }catch(e){}
     cancelEdit();
   } else {
     showAlert(msg.message || '操作失败', 'error');
@@ -796,16 +550,35 @@ document.addEventListener('DOMContentLoaded', function() {
   loadMyProducts().then(() => {
     loadSellerStats();
   });
-  // image input preview
+  // load category suggestions for the category input
+  loadCategoryOptions();
+  // image/video input preview (support multiple files)
   const imgInput = document.getElementById('productImage');
   if (imgInput) {
     imgInput.addEventListener('change', function(e){
       const p = document.getElementById('imagePreview');
       p.innerHTML = '';
-      const f = this.files[0];
-      if (!f) return;
-      const url = URL.createObjectURL(f);
-      p.innerHTML = `<img src="${url}" style="max-width:140px;max-height:90px;border-radius:6px;">`;
+      const files = Array.from(this.files || []);
+      if (files.length === 0) return;
+      files.forEach(f => {
+        const url = URL.createObjectURL(f);
+        if (f.type.startsWith('image/')) {
+          const img = document.createElement('img');
+          img.src = url;
+          img.style.maxWidth = '140px';
+          img.style.maxHeight = '90px';
+          img.style.borderRadius = '6px';
+          img.style.display = 'block';
+          p.appendChild(img);
+        } else if (f.type.startsWith('video/')) {
+          const vid = document.createElement('video');
+          vid.src = url;
+          vid.style.maxWidth = '140px';
+          vid.style.maxHeight = '90px';
+          vid.controls = true;
+          p.appendChild(vid);
+        }
+      });
     });
   }
 });
@@ -819,6 +592,70 @@ async function loadSellerStats(){
   const sales = parseFloat(res.total_sales) || 0;
   document.getElementById('totalProducts').textContent = total;
   document.getElementById('totalSales').textContent = `RM ${sales.toFixed(2)}`;
+}
+
+// Load category options into the datalist and dedupe names
+async function loadCategoryOptions(){
+  const listEl = document.getElementById('categoriesList');
+  if(!listEl) return;
+  try{
+    const data = await safeFetch('api.php?action=list_categories');
+    if(!Array.isArray(data)) return;
+    const seen = new Set();
+    listEl.innerHTML = '';
+    data.forEach(c => {
+      const name = (c && c.name) ? String(c.name).trim() : '';
+      if(!name) return;
+      const key = name.toLowerCase();
+      if(seen.has(key)) return; // dedupe case-insensitively
+      seen.add(key);
+      const opt = document.createElement('option');
+      opt.value = name;
+      listEl.appendChild(opt);
+    });
+  }catch(e){ console.warn('加载分类建议失败', e); }
+}
+
+// Refresh category suggestions when other tabs update categories
+window.addEventListener('storage', function(e){
+  if(e.key === 'categoriesUpdated') loadCategoryOptions();
+});
+
+// Remove an uploaded media file from a product (frontend handler)
+async function removeUploadedMedia(productId, mediaEncoded){
+  const media = decodeURIComponent(mediaEncoded);
+  if(!confirm('确定要删除这个媒体吗？')) return;
+  const res = await safeFetch('api.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ action: 'remove_media', id: productId, seller_id: currentUser.id, media })
+  });
+  if(!res) return;
+  if(res.status === 'ok'){
+    // remove matching preview elements
+    document.querySelectorAll('#imagePreview > div, #imagePreview img, #imagePreview video, #imagePreview iframe').forEach(el=>{
+      try{
+        const nested = el.tagName === 'DIV' ? (el.querySelector('img,video,iframe')) : el;
+        const src = nested && nested.src ? nested.src : '';
+        if(src && src.indexOf(media) !== -1){
+          el.remove();
+        }
+      }catch(e){}
+    });
+    // also remove from youtube textarea if present
+    const ytEl = document.getElementById('youtubeLinks');
+    if(ytEl){
+      const parts = (ytEl.value||'').split(/[,\n]+/).map(s=>s.trim()).filter(Boolean);
+      const filtered = parts.filter(p=> p !== media);
+      if(filtered.length !== parts.length){ ytEl.value = filtered.join('\n'); ytEl.dispatchEvent(new Event('input')); }
+    }
+    // refresh product in list
+    const prod = await safeFetch(`api.php?action=get_product&id=${productId}`);
+    if(prod && prod.id) replaceOrInsertProduct(prod);
+    showAlert('媒体已删除', 'success');
+  } else {
+    showAlert(res.message || '删除媒体失败', 'error');
+  }
 }
 
 // Helper: 渲染单个商品为 HTML（带唯一 id，便于局部替换）
@@ -841,8 +678,18 @@ function renderProductHTML(p) {
     `;
   }
 
-  // thumbnail HTML
-  const imgHtml = p.image ? `<div style="margin-right:12px;"><img src="${escapeHtml(p.image)}" style="width:140px;height:90px;object-fit:cover;border-radius:6px;display:block"></div>` : '';
+  // thumbnail HTML (support JSON-array stored in p.image)
+  let imgHtml = '';
+  try {
+    if (p.image) {
+      let imgs = p.image;
+      if (typeof imgs === 'string' && imgs.trim().startsWith('[')) imgs = JSON.parse(imgs);
+      if (!Array.isArray(imgs)) imgs = [imgs];
+      if (Array.isArray(imgs) && imgs.length > 0) {
+        imgHtml = `<div style="margin-right:12px;"><img src="${escapeHtml(String(imgs[0]).replace(/\r?\n/g,''))}" style="width:140px;height:90px;object-fit:cover;border-radius:6px;display:block"></div>`;
+      }
+    }
+  } catch(e){ imgHtml = ''; }
 
   return `
   <div class="product-item" id="prod-${p.id}">

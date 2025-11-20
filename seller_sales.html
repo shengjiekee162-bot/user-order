@@ -5,16 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>销售记录 - 卖家</title>
 <style>
-  body{font-family:Segoe UI,Roboto,Arial;margin:18px;background:#fafafa}
+  :root{
+    --bg:#040616; --panel:rgba(10,14,28,0.6); --muted:#9fb6d9; --accent:#00e6ff; --accent-2:#8a3bff; --glow: 0 8px 30px rgba(138,59,255,0.12);
+  }
+  body{font-family:Segoe UI,Roboto,Arial;margin:18px;background:linear-gradient(180deg,#05060a,#07101a);color:var(--muted)}
   .wrap{max-width:980px;margin:0 auto}
   header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-  h1{margin:0;color:#f53d2d}
-  .card{background:#fff;padding:14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.06);}
-  .order{margin-bottom:12px;padding:12px;border-radius:6px;border-left:4px solid #f53d2d;background:#fff}
+  h1{margin:0;color:var(--accent-2)}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:14px;border-radius:10px;box-shadow:var(--glow);border:1px solid rgba(255,255,255,0.03);color:#e6f7ff}
+  .order{margin-bottom:12px;padding:12px;border-radius:8px;border-left:4px solid var(--accent-2);background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent)}
   table{width:100%;border-collapse:collapse}
-  th,td{padding:6px 8px;border-bottom:1px solid #f3f3f3;text-align:left}
-  .muted{color:#666}
-  a.btn{display:inline-block;padding:8px 12px;border-radius:6px;background:#f53d2d;color:#fff;text-decoration:none}
+  th,td{padding:8px 10px;border-top:1px solid rgba(255,255,255,0.03);text-align:left;color:#e6f7ff}
+  th{background:rgba(255,255,255,0.02);color:var(--muted);font-weight:600}
+  .muted{color:var(--muted)}
+  a.btn{display:inline-block;padding:8px 12px;border-radius:8px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#041226;text-decoration:none;box-shadow:0 8px 20px rgba(138,59,255,0.06)}
+  @media (max-width:720px){ body{margin:12px} .order{padding:10px} th,td{padding:8px} }
 </style>
 </head>
 <body>

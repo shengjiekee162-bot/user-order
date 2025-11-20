@@ -6,77 +6,47 @@
   <!-- 响应式视窗 -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #fafafa; margin:0; display:flex; }
-.sidebar { width:300px; padding:15px; border-left:1px solid #eee; background:#fff; height:100vh; box-shadow:-2px 0 5px rgba(0,0,0,0.05); }
-main { flex:1; padding:20px; }
-header { background: #f53d2d; color: white; display:flex; justify-content:space-between; align-items:center; padding:10px 15px; margin-bottom:10px; }
-header h1 { margin:0; font-size:20px; }
-header .user { font-size:14px; }
-.search-bar { display:flex; margin-bottom:10px; }
-.search-bar input { flex:1; padding:8px; border:1px solid #ddd; border-radius:6px 0 0 6px; }
-.search-bar button { border:none; background:#f53d2d; color:white; padding:8px 12px; border-radius:0 6px 6px 0; cursor:pointer; }
-.categories { display:flex; margin-bottom:10px; }
-.categories button { margin-right:5px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; background:#eee; }
-.products { display:flex; flex-wrap:wrap; }
-.card { background:white; width:150px; margin:5px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow:hidden; text-align:center; transition:transform 0.2s; padding:10px; }
-.card:hover { transform:scale(1.05); }
-.card h4 { margin:5px 0; font-size:14px; }
-.card button { width:100%; border:none; background:#f53d2d; color:white; padding:6px; cursor:pointer; }
-.cart { margin-top:10px; padding:10px; background:#f53d2d; color:white; border-radius:5px; cursor:pointer; text-align:center; }
-.form-group { margin-bottom:10px; }
-.form-group input { width:100%; padding:6px; border:1px solid #ddd; border-radius:4px; }
-.form-group button { width:100%; padding:8px; border:none; background:#f53d2d; color:white; cursor:pointer; border-radius:4px; }
-.order-card { background:white; padding:15px; margin-bottom:10px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-.order-card h4 { margin:0 0 10px 0; color:#f53d2d; }
-.order-card .items { white-space:pre-line; margin:10px 0; padding:10px; background:#f8f8f8; border-radius:4px; }
-.order-card .meta { color:#666; font-size:0.9em; }
-.payment-methods { margin:15px 0; }
-.payment-option { border:1px solid #ddd; margin-bottom:10px; padding:10px; border-radius:4px; cursor:pointer; }
-.payment-option:hover { border-color:#f53d2d; }
-.payment-option.selected { border-color:#f53d2d; background:#fff3f3; }
-.payment-option label { display:flex; align-items:center; cursor:pointer; }
-.payment-option .icon { font-size:24px; margin-right:10px; }
-.payment-option .text { font-weight:bold; flex:1; }
-.payment-option .desc { color:#666; font-size:0.9em; }
-.payment-option input[type="radio"] { display:none; }
-.payment-detail-form { margin-top:10px; padding:10px; background:#f8f8f8; border-radius:4px; }
-/* Modal 样式 */
-.modal { position:fixed; inset:0; background: rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:999; }
-.modal-content { background:#fff; padding:18px; width:80%; max-width:900px; border-radius:8px; box-shadow:0 6px 30px rgba(0,0,0,0.2); }
-/* 订单摘要样式 */
-#orderSummaryBody table { width:100%; border-collapse:collapse; }
-#orderSummaryBody th, #orderSummaryBody td { padding:6px 8px; border-bottom:1px solid #eee; text-align:left; }
-#orderSummaryBody .total { text-align:right; font-weight:bold; padding-top:8px; }
-
-/* Mobile responsive rules */
-@media (max-width: 900px) {
-  body { flex-direction:column; }
-  header { flex-wrap:wrap; padding:10px; }
-  header h1 { flex:1 1 100%; font-size:18px; margin-bottom:8px; }
-  .search-bar { order:3; width:100%; }
-  .categories { order:4; width:100%; overflow:auto; }
-  main { padding:12px; }
-  .products { justify-content:center; }
-  .card { width:45%; margin:6px; }
-  .sidebar { width:100%; order:5; box-shadow:none; border-left:none; }
-  .sidebar h4 { margin-top:0; }
-  .cart { padding:12px; font-size:16px; }
+/* Tech-style theme: dark, neon accents, glass panels */
+:root{
+  /* Blue neon + purple cyberpunk */
+  --bg:#040616; /* deep near-black */
+  --panel:rgba(10,14,28,0.6);
+  --muted:#9fb6d9;
+  --accent:#00e6ff;    /* neon blue */
+  --accent-2:#8a3bff;  /* cyber purple */
+  --glass: rgba(255,255,255,0.03);
+  --glow: 0 6px 30px rgba(138,59,255,0.12), 0 2px 8px rgba(0,230,255,0.06);
 }
-
-@media (max-width: 600px) {
-  .card { width:48%; }
-  .sidebar { display:none; /* show via toggle */ }
-  /* modal adapts to mobile full-screen, scrollable */
-  .modal-content { width:95%; max-width:600px; height:90vh; overflow:auto; padding:12px; }
-  .modal { align-items:flex-end; }
-  header .mobile-sidebar-btn { display:inline-block; }
-}
-
-/* Sidebar overlay when opened on mobile */
-.sidebar.mobile-open { display:block; position:fixed; right:0; top:0; height:100vh; width:80%; max-width:360px; background:#fff; box-shadow:-6px 0 30px rgba(0,0,0,0.2); z-index:1200; transform:translateX(0); }
-.sidebar.mobile-hidden { transform:translateX(100%); }
-
-.mobile-sidebar-btn { display:none; background:#fff; color:#f53d2d; border:none; padding:6px 8px; border-radius:4px; cursor:pointer; margin-right:8px; }
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;color:var(--muted);background:linear-gradient(180deg,#07101b 0%, #04101a 60%), var(--bg)}
+main{flex:1;padding:24px}
+header{background:linear-gradient(90deg, rgba(138,59,255,0.12), rgba(0,230,255,0.08));color:#e8f7ff;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-radius:10px;box-shadow:var(--glow);margin-bottom:14px}
+header h1{margin:0;color:#ffffff;font-weight:800;letter-spacing:0.6px;text-shadow:0 2px 18px rgba(0,230,255,0.08)}
+header .user{color:#dffaff}
+.search-bar{display:flex;gap:8px;margin-bottom:12px}
+.search-bar input{flex:1;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);color:#e6eef8;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
+.search-bar button{background:linear-gradient(90deg,var(--accent),var(--accent-2));border:none;color:#041226;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:0 8px 28px rgba(0,230,255,0.10)}
+.categories{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.categories button{background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border:1px solid rgba(255,255,255,0.03);padding:8px 12px;border-radius:999px;color:var(--muted);cursor:pointer;transition:all .18s}
+.categories button:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,0.6);color:var(--accent)}
+.products{display:flex;flex-wrap:wrap;gap:12px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));width:170px;padding:12px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.6);text-align:center;transition:transform .18s,border-color .18s;border:1px solid rgba(255,255,255,0.03)}
+.card:hover{transform:translateY(-6px);border-color:rgba(138,59,255,0.18);box-shadow:0 16px 40px rgba(138,59,255,0.08), 0 6px 24px rgba(0,230,255,0.06)}
+.card h4{margin:8px 0 6px 0;color:#e8f7ff;font-size:14px;text-shadow:0 1px 8px rgba(138,59,255,0.04)}
+.card p{color:var(--muted);margin:0 0 8px 0}
+.card button{width:100%;padding:8px;border-radius:8px;border:none;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#061427;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,230,255,0.12), inset 0 -2px 8px rgba(138,59,255,0.06)}
+.thumbnail-row{display:flex;gap:6px;margin-bottom:8px}
+.thumbnail-row img,.thumbnail-row video{width:100%;height:100%;display:block;border-radius:8px;object-fit:cover}
+.cart{margin-top:10px;padding:10px;background:linear-gradient(90deg,#0b1220, #071226);color:var(--accent);border-radius:10px;text-align:center;cursor:pointer}
+.form-group{margin-bottom:10px}
+.form-group input{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#e6eef8}
+.form-group button{width:100%;padding:8px;border-radius:8px;border:none;background:linear-gradient(90deg,var(--accent-2),var(--accent));color:#041421}
+  .modal{position:fixed;inset:0;background:rgba(3,6,12,0.6);display:flex;align-items:center;justify-content:center;z-index:999}
+  /* Make checkout / media panels opaque (no glass transparency) */
+  .modal-content{background:linear-gradient(180deg,#071126,#041026);padding:18px;width:90%;max-width:980px;border-radius:12px;box-shadow:0 20px 60px rgba(2,6,23,0.9);border:1px solid rgba(138,59,255,0.12)}
+/* responsive */
+@media (max-width:900px){body{padding:0}main{padding:14px}.card{width:46%}}
+@media (max-width:600px){.card{width:48%}.search-bar{flex-direction:column}}
 </style>
 </style>
 </head>
@@ -104,11 +74,8 @@ header .user { font-size:14px; }
   <button onclick="document.getElementById('imageInput').click();" style="margin-left:8px; background:#fff; color:#f53d2d; border:1px solid #f53d2d; padding:6px 10px; border-radius:6px;" data-i18n="camera.button">📷 拍照搜索</button>
 </div>
 
-<div class="categories">
-  <button onclick="filterCategory('')" data-i18n="categories.all">全部</button>
-  <button onclick="filterCategory('电子产品')">电子产品</button>
-  <button onclick="filterCategory('配件')">配件</button>
-  <button onclick="filterCategory('生活用品')">生活用品</button>
+<div class="categories" id="categoriesBar">
+  <!-- categories will be loaded dynamically -->
 </div>
 
 <div class="products" id="productContainer"></div>
@@ -150,12 +117,16 @@ header .user { font-size:14px; }
           <button onclick="showAddAddressForm()" style="margin-top:8px; width:100%; background:#4CAF50; color:white; border:none; border-radius:4px; padding:6px;">添加新地址</button>
         </div>
         <div id="addAddressForm" style="display:none; margin-bottom:10px;">
+          <input type="hidden" id="editingAddressId" value="">
           <input type="text" id="newRecipientName" placeholder="收件人姓名" style="margin-bottom:5px; width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">
           <input type="text" id="newRecipientAddress" placeholder="收货地址" style="margin-bottom:5px; width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">
+          <input type="text" id="newRecipientPhone" placeholder="联系电话 (可选)" style="margin-bottom:5px; width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">
+          <textarea id="newRecipientNote" placeholder="备注（可选）" style="margin-bottom:5px; width:100%; padding:6px; border:1px solid #ddd; border-radius:4px; min-height:56px"></textarea>
           <label style="display:block; margin-bottom:5px;"><input type="checkbox" id="isDefaultAddress"> 设为默认地址</label>
-          <button onclick="addAddress()" style="width:100%; background:#f53d2d; color:white; border:none; border-radius:4px; padding:6px;">保存地址</button>
+          <button id="saveAddressBtn" onclick="saveAddress()" style="width:100%; background:#f53d2d; color:white; border:none; border-radius:4px; padding:6px;">保存地址</button>
           <button onclick="hideAddAddressForm()" style="width:100%; background:#ddd; color:#333; border:none; border-radius:4px; padding:6px; margin-top:5px;">取消</button>
         </div>
+        <div id="addressListArea" style="margin-top:8px"></div>
       </div>
 
       <!-- 右侧：支付方式 -->
@@ -251,9 +222,33 @@ async function loadAddresses() {
   const select = document.getElementById('addressSelect');
   select.innerHTML = '<option value="">请选择收货地址</option>';
   addressList.forEach(addr => {
-    select.innerHTML += `<option value="${addr.id}"${addr.is_default ? ' selected' : ''}>${addr.recipient_name} - ${addr.recipient_address}${addr.is_default ? '（默认）' : ''}</option>`;
+    const phonePart = addr.phone ? (' · ' + addr.phone) : '';
+    select.innerHTML += `<option value="${addr.id}"${addr.is_default ? ' selected' : ''}>${addr.recipient_name} - ${addr.recipient_address}${phonePart}${addr.is_default ? '（默认）' : ''}</option>`;
     if (addr.is_default) selectedAddressId = addr.id;
   });
+
+  // Also render a compact address list with edit / delete buttons
+  const listArea = document.getElementById('addressListArea');
+  if(listArea){
+    if(addressList.length === 0){
+      listArea.innerHTML = '<div class="muted">暂无收件地址</div>';
+    } else {
+      listArea.innerHTML = addressList.map(a=>{
+        return `<div style="padding:8px;border-radius:6px;margin-bottom:6px;background:rgba(255,255,255,0.02);display:flex;justify-content:space-between;gap:8px;align-items:center">`+
+          `<div style="flex:1">`+
+            `<div style="font-weight:700;color:#eaf6ff">${escapeHtml(a.recipient_name)} ${a.is_default ? '<span style="color:#8a3bff;font-weight:600">（默认）</span>' : ''}</div>`+
+            `<div style="color:var(--muted);font-size:0.95em">${escapeHtml(a.recipient_address)}</div>`+
+            `${a.phone ? `<div style="color:var(--muted);font-size:0.95em">电话: ${escapeHtml(a.phone)}</div>` : ''}`+
+            `${a.note ? `<div style="color:var(--muted);font-size:0.9em;margin-top:6px">备注: ${escapeHtml(a.note)}</div>` : ''}`+
+          `</div>`+
+          `<div style="display:flex;gap:6px">`+
+            `<button onclick="showEditAddress(${a.id})" style="background:#00d4ff;color:#031026;border:none;padding:6px 8px;border-radius:6px;cursor:pointer">编辑</button>`+
+            `<button onclick="deleteAddress(${a.id})" style="background:#f44336;color:#fff;border:none;padding:6px 8px;border-radius:6px;cursor:pointer">删除</button>`+
+          `</div>`+
+        `</div>`;
+      }).join('');
+    }
+  }
 }
 
 function showAddAddressForm() {
@@ -288,6 +283,80 @@ async function addAddress() {
     await loadAddresses();
   } else {
     alert(res && res.message ? res.message : '保存失败');
+  }
+}
+
+// Unified save function: add new or update existing
+async function saveAddress(){
+  const editingId = document.getElementById('editingAddressId').value;
+  const name = document.getElementById('newRecipientName').value.trim();
+  const address = document.getElementById('newRecipientAddress').value.trim();
+  const isDefault = document.getElementById('isDefaultAddress').checked ? 1 : 0;
+  if(!name || !address) return alert('请填写完整地址信息');
+
+  const payload = {
+    user_id: currentUser.id,
+    recipient_name: name,
+    recipient_address: address,
+    phone: document.getElementById('newRecipientPhone').value.trim(),
+    note: document.getElementById('newRecipientNote').value.trim(),
+    is_default: isDefault
+  };
+
+  if(editingId){
+    payload.action = 'update_address';
+    payload.id = parseInt(editingId);
+  } else {
+    payload.action = 'add_address';
+  }
+
+  const res = await safeFetch('api.php', {
+    method: 'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+
+  if(res && res.status === 'ok'){
+    alert('地址已保存');
+    hideAddAddressForm();
+    document.getElementById('newRecipientName').value = '';
+    document.getElementById('newRecipientAddress').value = '';
+    document.getElementById('isDefaultAddress').checked = false;
+    document.getElementById('editingAddressId').value = '';
+    await loadAddresses();
+  } else {
+    alert(res && res.message ? res.message : '保存失败');
+  }
+}
+
+// Show edit form for an existing address
+function showEditAddress(id){
+  const a = addressList.find(x=> Number(x.id) === Number(id));
+  if(!a) return alert('地址未找到');
+  document.getElementById('editingAddressId').value = a.id;
+  document.getElementById('newRecipientName').value = a.recipient_name;
+  document.getElementById('newRecipientAddress').value = a.recipient_address;
+  document.getElementById('isDefaultAddress').checked = !!a.is_default;
+  document.getElementById('newRecipientPhone').value = a.phone || '';
+  document.getElementById('newRecipientNote').value = a.note || '';
+  document.getElementById('addAddressForm').style.display = 'block';
+  // scroll into view inside modal if needed
+  try{ document.getElementById('addAddressForm').scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
+}
+
+// Delete an address
+async function deleteAddress(id){
+  if(!confirm('确定删除此地址？此操作不可恢复。')) return;
+  const res = await safeFetch('api.php', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ action: 'delete_address', user_id: currentUser.id, id: id })
+  });
+  if(res && res.status === 'ok'){
+    alert('地址已删除');
+    await loadAddresses();
+  } else {
+    alert(res && res.message ? res.message : '删除失败');
   }
 }
 
@@ -356,16 +425,74 @@ async function loadProducts(){
   if(!data) return;
   const container = document.getElementById('productContainer');
   container.innerHTML = '';
-  data.forEach(p=>{
+  // Deduplicate products by name (case-insensitive) to avoid showing duplicates
+  const seen = new Set();
+  const unique = [];
+  data.forEach(p => {
+    const nameKey = (p && p.name) ? String(p.name).trim().toLowerCase() : '';
+    if(!seen.has(nameKey)){
+      seen.add(nameKey);
+      unique.push(p);
+    }
+  });
+  unique.forEach(p=>{
+    const mediaHtml = renderMediaHTML(p);
     container.innerHTML += `
       <div class="card">
-        ${p.image ? `<div style="width:100%;height:120px;overflow:hidden;border-radius:8px;margin-bottom:8px"><img src="${p.image}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : ''}
-        <h4>${p.name}</h4>
-        <p>RM ${p.price}</p>
+        ${mediaHtml}
+        <h4>${escapeHtml(p.name)}</h4>
+        <p>RM ${escapeHtml(String(p.price || '0'))}</p>
         <button onclick='addToCart(${JSON.stringify(p)})'>加入购物车</button>
       </div>
     `;
   });
+}
+
+// return a thumbnail URL (or direct image URL) for product media; handles JSON arrays and YouTube links
+// Render media HTML for a product card: prefers first media (image, video, or YouTube)
+function renderMediaHTML(p){
+  try{
+    let imgs = p.image;
+    if(!imgs) return '';
+    if(typeof imgs === 'string' && imgs.trim().startsWith('[')) imgs = JSON.parse(imgs);
+    if(!Array.isArray(imgs)) imgs = [imgs];
+    if(imgs.length === 0) return '';
+    // Render up to 3 media thumbnails (image, video or YouTube thumbnail)
+    const maxThumbs = 3;
+    const parts = imgs.map(i => String(i).replace(/\r?\n/g, '').trim()).filter(Boolean);
+    if(parts.length === 0) return '';
+
+    // helper to detect youtube id
+    const extractYt = s => {
+      const m = s.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+      return (m && m[1]) ? m[1] : null;
+    };
+
+    // build HTML grid for up to maxThumbs
+    const used = parts.slice(0, maxThumbs);
+    const cols = used.length;
+    const cellWidth = Math.floor(100 / cols);
+    let html = `<div style="display:flex;gap:6px;margin-bottom:8px;border-radius:8px;overflow:hidden">`;
+    used.forEach((item, ti) => {
+      const thumbIndex = ti;
+      const yt = extractYt(item);
+      const lower = item.toLowerCase();
+      if (yt) {
+        // show YouTube thumbnail (lighter than iframe)
+        const thumb = `https://img.youtube.com/vi/${yt}/hqdefault.jpg`;
+        html += `<div onclick='openMediaModal(${JSON.stringify(p)}, ${thumbIndex})' style="flex:1 1 ${cellWidth}% ;height:120px;overflow:hidden;border-radius:6px;cursor:pointer"><img src="${escapeHtml(thumb)}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+      } else if (lower.match(/\.(jpg|jpeg|png|gif|webp)$/i) || item.startsWith('http') || item.indexOf('uploads/') === 0) {
+        html += `<div onclick='openMediaModal(${JSON.stringify(p)}, ${thumbIndex})' style="flex:1 1 ${cellWidth}% ;height:120px;overflow:hidden;border-radius:6px;cursor:pointer"><img src="${escapeHtml(item)}" alt="${escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
+      } else if (lower.match(/\.(mp4|webm|ogg|mov)$/i)) {
+        html += `<div onclick='openMediaModal(${JSON.stringify(p)}, ${thumbIndex})' style="flex:1 1 ${cellWidth}% ;height:120px;overflow:hidden;border-radius:6px;cursor:pointer"><video src="${escapeHtml(item)}" style="width:100%;height:100%;object-fit:cover;display:block" muted playsinline></video></div>`;
+      } else {
+        // unknown type - render as text fallback
+        html += `<div onclick='openMediaModal(${JSON.stringify(p)}, ${thumbIndex})' style="flex:1 1 ${cellWidth}% ;height:120px;overflow:hidden;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#888;cursor:pointer">${escapeHtml(item)}</div>`;
+      }
+    });
+    html += `</div>`;
+    return html;
+  }catch(e){ return ''; }
 }
 
 // 拍照搜索：上传图片到后端并显示搜索结果
@@ -768,9 +895,53 @@ function getPaymentStatusText(status) {
   return statuses[status] || status;
 }
 
+// 加载分类并渲染成按钮（从后端获取所有 categories）
+async function loadCategories(){
+  const bar = document.getElementById('categoriesBar');
+  if(!bar) return;
+  bar.innerHTML = '<button onclick="filterCategory(\'\')" data-i18n="categories.all">全部</button>';
+  try{
+    const data = await safeFetch('api.php?action=list_categories');
+    if(!Array.isArray(data)) return;
+    // Deduplicate category names (case-insensitive)
+    const seen = new Set();
+    data.forEach(cat=>{
+      const rawName = cat.name || '';
+      const name = String(rawName).trim();
+      if(!name) return;
+      const key = name.toLowerCase();
+      if(seen.has(key)) return;
+      seen.add(key);
+      const btn = document.createElement('button');
+      btn.textContent = name;
+      btn.onclick = function(){ filterCategory(name); highlightCategory(name); };
+      bar.appendChild(btn);
+    });
+    // highlight current
+    highlightCategory(currentCategory || '');
+  } catch(e){
+    console.warn('加载分类失败', e);
+  }
+}
+
+function highlightCategory(cat){
+  const bar = document.getElementById('categoriesBar');
+  if(!bar) return;
+  bar.querySelectorAll('button').forEach(b=>{
+    if(b.getAttribute('data-i18n') === 'categories.all' && cat === ''){
+      b.style.background = '#f53d2d'; b.style.color='white';
+    } else if(b.textContent === cat){
+      b.style.background = '#f53d2d'; b.style.color='white';
+    } else {
+      b.style.background = '#eee'; b.style.color='';
+    }
+  });
+}
+
 // 初始化
 showUser();
-loadProducts();
+// load categories first, then products so category filters are available
+loadCategories().then(()=> loadProducts());
 updateSidebarVisibility(); // 初始化时设置侧边栏显示状态
 
 // Mobile sidebar toggle for small screens
@@ -788,9 +959,89 @@ function toggleSidebarMobile(){
     setTimeout(()=> sb.classList.add('mobile-open'), 10);
   }
 }
+
+// Listen for category changes from other tabs (seller added/updated a category)
+window.addEventListener('storage', function(e){
+  if(e.key === 'categoriesUpdated'){
+    loadCategories();
+  }
+});
 </script>
 
 <script src="i18n.js"></script>
 
 </body>
 </html>
+<!-- Media viewer modal -->
+<div id="mediaModal" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width:900px; max-height:90vh; overflow:hidden; position:relative;">
+    <button onclick="closeMediaModal()" style="position:absolute;right:12px;top:10px;background:#fff;border:none;padding:6px 8px;border-radius:4px;cursor:pointer;z-index:20">关闭</button>
+    <div id="mediaViewer" style="display:flex;align-items:center;justify-content:center;height:100%;padding:12px"></div>
+    <div style="position:absolute;left:12px;top:10px;color:#666;z-index:20" id="mediaViewerTitle"></div>
+    <button id="mediaPrev" onclick="showMediaAt(currentMediaIndex-1)" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.8);border:none;padding:8px;border-radius:50%;cursor:pointer;z-index:20">◀</button>
+    <button id="mediaNext" onclick="showMediaAt(currentMediaIndex+1)" style="position:absolute;right:50px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.8);border:none;padding:8px;border-radius:50%;cursor:pointer;z-index:20">▶</button>
+  </div>
+</div>
+
+<script>
+let currentMediaList = [];
+let currentMediaIndex = 0;
+
+function openMediaModal(product, startIndex){
+  try{
+    // normalize media list
+    let imgs = product.image || [];
+    if(typeof imgs === 'string' && imgs.trim().startsWith('[')) imgs = JSON.parse(imgs);
+    if(!Array.isArray(imgs)) imgs = [imgs];
+    currentMediaList = imgs.map(i => String(i).replace(/\r?\n/g,'').trim()).filter(Boolean);
+    if(currentMediaList.length === 0) return;
+    currentMediaIndex = Math.max(0, Math.min(startIndex || 0, currentMediaList.length-1));
+    document.getElementById('mediaViewerTitle').innerText = product.name || '';
+    showMediaAt(currentMediaIndex);
+    const modal = document.getElementById('mediaModal');
+    modal.style.display = 'flex';
+  }catch(e){ console.error(e); }
+}
+
+function closeMediaModal(){
+  const modal = document.getElementById('mediaModal');
+  modal.style.display = 'none';
+  const viewer = document.getElementById('mediaViewer');
+  viewer.innerHTML = '';
+  currentMediaList = [];
+  currentMediaIndex = 0;
+}
+
+function showMediaAt(idx){
+  if(idx < 0) idx = 0;
+  if(idx >= currentMediaList.length) idx = currentMediaList.length-1;
+  currentMediaIndex = idx;
+  const viewer = document.getElementById('mediaViewer');
+  viewer.innerHTML = '';
+  const item = currentMediaList[idx];
+  if(!item) return;
+  const ytMatch = item.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  if(ytMatch && ytMatch[1]){
+    const id = ytMatch[1];
+    viewer.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen style="width:100%;height:80vh"></iframe>`;
+  } else if(item.match(/\.(jpg|jpeg|png|gif|webp)$/i) || item.startsWith('http') || item.indexOf('uploads/') === 0){
+    viewer.innerHTML = `<img src="${item}" style="max-width:100%;max-height:80vh;display:block;margin:auto">`;
+  } else if(item.match(/\.(mp4|webm|ogg|mov)$/i)){
+    viewer.innerHTML = `<video src="${item}" controls style="max-width:100%;max-height:80vh;display:block;margin:auto" playsinline></video>`;
+  } else {
+    viewer.innerHTML = `<div style="padding:20px;background:#fff">${item}</div>`;
+  }
+  // update prev/next visibility
+  document.getElementById('mediaPrev').style.display = currentMediaIndex > 0 ? 'block' : 'none';
+  document.getElementById('mediaNext').style.display = currentMediaIndex < currentMediaList.length-1 ? 'block' : 'none';
+}
+
+// keyboard navigation
+document.addEventListener('keydown', function(e){
+  const modal = document.getElementById('mediaModal');
+  if(!modal || modal.style.display === 'none') return;
+  if(e.key === 'Escape') closeMediaModal();
+  if(e.key === 'ArrowLeft') showMediaAt(currentMediaIndex-1);
+  if(e.key === 'ArrowRight') showMediaAt(currentMediaIndex+1);
+});
+</script>
