@@ -367,8 +367,10 @@ document.getElementById('addressSelect').addEventListener('change', function() {
 function showUser() {
   const userDiv = document.getElementById('userDisplay');
   if(currentUser){
+    // If current user is admin, link username to admin user detail
+    const uname = currentUser.role === 'admin' ? `<a href="admin.html?user_id=${currentUser.id}" style="color:inherit; text-decoration:underline">${currentUser.username}</a>` : currentUser.username;
     let html = `
-      欢迎回来 <b>${currentUser.username}</b> 
+      欢迎回来 <b>${uname}</b> 
       <span style="margin:0 10px">(${currentUser.role === 'buyer' ? '买家' : '卖家'})</span>
     `;
     if(currentUser.role === 'seller') {
@@ -692,7 +694,7 @@ async function showOrdersTab(){
   const list = document.getElementById('ordersListModal');
   list.innerHTML = orders.length ? orders.map(order => `
     <div class="order-card">
-      <h4>订单号: #${order.id}</h4>
+      <h4>${currentUser && currentUser.role === 'admin' ? `<a href="admin.html?order_id=${order.id}" style="color:var(--accent-2);text-decoration:underline">订单号: #${order.id}</a>` : `订单号: #${order.id}`}</h4>
       <div class="items">${order.items}</div>
       <div class="meta">
         <div>收件人: ${order.recipient_name}</div>

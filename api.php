@@ -2,6 +2,21 @@
 header("Content-Type: application/json");
 include "db.php";
 
+// Determine which column holds the account identifier in users table: prefer 'username', fall back to 'name', then 'email'
+$user_col = 'username';
+$colRes = $conn->query("SHOW COLUMNS FROM users LIKE 'username'");
+if (!($colRes && $colRes->num_rows > 0)) {
+    $colRes2 = $conn->query("SHOW COLUMNS FROM users LIKE 'name'");
+    if ($colRes2 && $colRes2->num_rows > 0) {
+        $user_col = 'name';
+    } else {
+        $colRes3 = $conn->query("SHOW COLUMNS FROM users LIKE 'email'");
+        if ($colRes3 && $colRes3->num_rows > 0) {
+            $user_col = 'email';
+        }
+    }
+}
+
 // Ensure addresses table exists and has columns for phone and note
 $conn->query("CREATE TABLE IF NOT EXISTS addresses (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -14,7 +29,47 @@ $conn->query("CREATE TABLE IF NOT EXISTS addresses (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+// If the addresses table existed previously without `phone` or `note`, add those columns.
+try{
+    $colPhone = $conn->query("SHOW COLUMNS FROM addresses LIKE 'phone'");
+    if(!($colPhone && $colPhone->num_rows > 0)){
+        $conn->query("ALTER TABLE addresses ADD COLUMN phone VARCHAR(64) DEFAULT NULL");
+    }
+    $colNote = $conn->query("SHOW COLUMNS FROM addresses LIKE 'note'");
+    if(!($colNote && $colNote->num_rows > 0)){
+        $conn->query("ALTER TABLE addresses ADD COLUMN note TEXT DEFAULT NULL");
+    }
+}catch(Exception $e){ /* ignore alter errors */ }
+
 $method = $_SERVER['REQUEST_METHOD'];
+
+// Helper: check admin access. Accepts either a configured admin_key (in mail_config.php or config.php)
+// or a user_id parameter that corresponds to a user with role 'admin'.
+function is_admin_allowed($conn, $params) {
+    $cfg = [];
+    if (file_exists(__DIR__ . '/mail_config.php')) $cfg = include __DIR__ . '/mail_config.php';
+    if (file_exists(__DIR__ . '/config.php')) {
+        $c2 = include __DIR__ . '/config.php';
+        if (is_array($c2)) $cfg = array_merge($cfg, $c2);
+    }
+
+    $providedKey = isset($params['admin_key']) ? $params['admin_key'] : null;
+    if (!empty($cfg['admin_key']) && $providedKey && hash_equals((string)$cfg['admin_key'], (string)$providedKey)) {
+        return true;
+    }
+
+    // fallback: accept user_id param if that user has role=admin
+    if (isset($params['user_id'])) {
+        $uid = intval($params['user_id']);
+        $stmt = $conn->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
+        $stmt->bind_param("i", $uid);
+        $stmt->execute();
+        $r = $stmt->get_result()->fetch_assoc();
+        if ($r && isset($r['role']) && $r['role'] === 'admin') return true;
+    }
+
+    return false;
+}
 
 try {
     switch($method) {
@@ -119,13 +174,13 @@ try {
             // 获取卖家的销售明细（订单项），包含订单信息与买家信息
             if(isset($_GET['action']) && $_GET['action'] === 'seller_sales' && isset($_GET['seller_id'])){
                 $seller_id = intval($_GET['seller_id']);
-                $sql = "SELECT oi.id as order_item_id, oi.order_id, oi.quantity, p.id as product_id, p.name as product_name, p.price as product_price, o.user_id as buyer_id, o.total_price as order_total, o.created_at as order_date, u.username as buyer_username, o.payment_status, o.payment_method
-                        FROM order_items oi
-                        JOIN products p ON oi.product_id = p.id
-                        JOIN orders o ON oi.order_id = o.id
-                        LEFT JOIN users u ON o.user_id = u.id
-                        WHERE p.seller_id = ?
-                        ORDER BY o.created_at DESC";
+                $sql = "SELECT oi.id as order_item_id, oi.order_id, oi.quantity, p.id as product_id, p.name as product_name, p.price as product_price, o.user_id as buyer_id, o.total_price as order_total, o.created_at as order_date, u." . $user_col . " as buyer_username, o.payment_status, o.payment_method
+                    FROM order_items oi
+                    JOIN products p ON oi.product_id = p.id
+                    JOIN orders o ON oi.order_id = o.id
+                    LEFT JOIN users u ON o.user_id = u.id
+                    WHERE p.seller_id = ?
+                    ORDER BY o.created_at DESC";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("i", $seller_id);
                 $stmt->execute();
@@ -161,6 +216,41 @@ try {
                 } catch(Exception $e) {
                     echo json_encode([]);
                 }
+                break;
+            }
+
+            // --- Admin endpoints: list users and list orders (restricted) ---
+            if (isset($_GET['action']) && $_GET['action'] === 'admin_list_users') {
+                if (!is_admin_allowed($conn, $_GET)) {
+                    http_response_code(403);
+                    echo json_encode(["status"=>"fail","message"=>"需要管理员权限"]);
+                    break;
+                }
+                $sql = "SELECT id, " . $user_col . " AS username, email, role, status, created_at FROM users ORDER BY id ASC";
+                $r = $conn->query($sql);
+                if (!$r) echo json_encode([]); else echo json_encode($r->fetch_all(MYSQLI_ASSOC));
+                break;
+            }
+
+            if (isset($_GET['action']) && $_GET['action'] === 'admin_list_orders') {
+                if (!is_admin_allowed($conn, $_GET)) {
+                    http_response_code(403);
+                    echo json_encode(["status"=>"fail","message"=>"需要管理员权限"]);
+                    break;
+                }
+                $sql = "SELECT o.*, u." . $user_col . " as buyer_username FROM orders o LEFT JOIN users u ON o.user_id=u.id ORDER BY o.created_at DESC";
+                $r = $conn->query($sql);
+                $orders = $r ? $r->fetch_all(MYSQLI_ASSOC) : [];
+                // enrich with items per order
+                foreach ($orders as &$ord) {
+                    $oid = intval($ord['id']);
+                    $stmt = $conn->prepare("SELECT oi.quantity, p.id as product_id, p.name, p.price FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?");
+                    $stmt->bind_param("i", $oid);
+                    $stmt->execute();
+                    $res = $stmt->get_result();
+                    $ord['items'] = $res->fetch_all(MYSQLI_ASSOC);
+                }
+                echo json_encode($orders);
                 break;
             }
 

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理后台</title>
+<style>
+:root{--bg:#040616;--muted:#9fb6d9;--accent:#00e6ff;--accent-2:#8a3bff}
+body{font-family:Inter,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#05060a,#07101a);color:var(--muted);margin:0;padding:20px}
+.container{max-width:1100px;margin:0 auto}
+.card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:16px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.btn{padding:8px 12px;border-radius:8px;border:none;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#041226;cursor:pointer}
+.small{padding:6px 8px;border-radius:6px;background:#0f1724;color:var(--muted);border:1px solid rgba(255,255,255,0.02)}
+.table{width:100%;border-collapse:collapse;margin-top:12px}
+.table th{background:rgba(255,255,255,0.02);text-align:left;padding:10px;color:var(--muted)}
+.table td{padding:10px;border-top:1px solid rgba(255,255,255,0.03);color:#e6f7ff}
+.login-row{display:flex;gap:8px;align-items:center}
+.login-row input{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#e6f7ff}
+.actions{display:flex;gap:8px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>管理后台</h1>
+    <div id="adminInfo">未登录</div>
+  </div>
+
+  <div class="card">
+    <div id="loginSection">
+      <div class="login-row">
+        <input id="username" placeholder="用户名" />
+        <input id="password" type="password" placeholder="密码" />
+        <button id="loginBtn" class="btn">登录</button>
+      </div>
+      <p style="color:var(--muted);margin-top:8px;font-size:13px">注：管理员需为 users.role = 'admin' 的账号。</p>
+      
+    </div>
+
+    <div id="panel" style="display:none">
+      <div class="actions">
+        <button class="small" onclick="loadUsers()">列出用户</button>
+        <button class="small" onclick="loadOrders()">列出订单</button>
+        <button class="small" onclick="logout()">退出</button>
+      </div>
+
+      <div id="result" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentAdmin = null;
+
+// On load, attempt to use existing site-wide login stored in localStorage
+window.addEventListener('DOMContentLoaded', ()=>{
+  try{
+    const stored = localStorage.getItem('user');
+    if(stored){
+      const u = JSON.parse(stored);
+      if(u && u.role === 'admin'){
+        currentAdmin = u;
+        document.getElementById('adminInfo').innerText = `已登录：${u.username}`;
+        document.getElementById('loginSection').style.display='none';
+        document.getElementById('panel').style.display='block';
+      }
+    }
+  }catch(e){}
+  // handle query params (user_id or order_id)
+  setTimeout(handleQueryParams, 300);
+});
+
+function handleQueryParams(){
+  const params = new URLSearchParams(window.location.search);
+  const uid = params.get('user_id');
+  const oid = params.get('order_id');
+  if(uid){
+    // If not logged in as admin, prompt to login first
+    if(!currentAdmin) return document.getElementById('result').innerText = '请先以管理员身份登录以查看用户详情';
+    loadUserDetail(parseInt(uid,10));
+  } else if(oid){
+    if(!currentAdmin) return document.getElementById('result').innerText = '请先以管理员身份登录以查看订单详情';
+    loadOrderDetail(parseInt(oid,10));
+  }
+}
+
+async function loadUserDetail(targetId){
+  document.getElementById('result').innerHTML = '<div>正在加载用户信息…</div>';
+  // use admin_list_users (restricted) and filter client-side
+  const res = await fetch(`api.php?action=admin_list_users&user_id=${currentAdmin.id}`);
+  const data = await res.json().catch(()=>null);
+  if(!Array.isArray(data)) return document.getElementById('result').innerText = JSON.stringify(data);
+  const u = data.find(x => Number(x.id) === Number(targetId));
+  if(!u) return document.getElementById('result').innerText = '未找到该用户';
+  let html = `<h3>用户详情 - ${escapeHtml(u.username)}</h3>`;
+  html += `<div style="margin-top:8px">ID: ${u.id}</div>`;
+  html += `<div>邮箱: ${escapeHtml(u.email)}</div>`;
+  html += `<div>角色: ${escapeHtml(u.role)}</div>`;
+  html += `<div>状态: ${escapeHtml(u.status)}</div>`;
+  html += `<div>注册时间: ${escapeHtml(u.created_at)}</div>`;
+  html += `<div style="margin-top:12px">`;
+  html += `<button class="small" onclick="alert('功能未实现：编辑用户')">编辑用户</button> `;
+  html += `<button class="small" onclick="alert('功能未实现：禁用/启用用户')">禁用/启用</button>`;
+  html += `</div>`;
+  document.getElementById('result').innerHTML = html;
+}
+
+async function loadOrderDetail(orderId){
+  document.getElementById('result').innerHTML = '<div>正在加载订单详情…</div>';
+  const res = await fetch(`api.php?action=order_detail&order_id=${orderId}`);
+  const data = await res.json().catch(()=>null);
+  if(!data || !data.order) return document.getElementById('result').innerText = '未找到订单';
+  const o = data.order;
+  let html = `<h3>订单详情 - #${o.id}</h3>`;
+  html += `<div>买家ID: ${o.user_id} — 收件人: ${escapeHtml(o.recipient_name)} — 地址: ${escapeHtml(o.recipient_address)}</div>`;
+  html += `<div>总价: RM ${parseFloat(o.total_price).toFixed(2)} — 支付方式: ${escapeHtml(o.payment_method)} — 支付状态: ${escapeHtml(o.payment_status)}</div>`;
+  html += `<div style="margin-top:12px">商品列表：</div>`;
+  if(Array.isArray(data.items) && data.items.length){
+    html += '<table class="table"><thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr></thead><tbody>';
+    data.items.forEach(it=>{ html += `<tr><td>${escapeHtml(it.name)}</td><td>RM ${parseFloat(it.price).toFixed(2)}</td><td>${it.quantity}</td><td>RM ${(parseFloat(it.price)*parseInt(it.quantity||0)).toFixed(2)}</td></tr>` });
+    html += '</tbody></table>';
+  } else html += '<div>（无订单项）</div>';
+  document.getElementById('result').innerHTML = html;
+}
+
+async function postJson(url, body){
+  const res = await fetch(url, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return res.json().catch(()=>null);
+}
+
+document.getElementById('loginBtn').addEventListener('click', async ()=>{
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  if(!u || !p) return alert('请输入用户名和密码');
+  const r = await postJson('auth.php', {action:'login', username:u, password:p});
+  if(!r) return alert('登录失败');
+  if(r.status !== 'ok' || !r.user) return alert(r.message || '登录失败');
+  if(r.user.role !== 'admin') return alert('该账号不是管理员');
+  currentAdmin = r.user;
+  document.getElementById('adminInfo').innerText = `已登录：${r.user.username}`;
+  document.getElementById('loginSection').style.display='none';
+  document.getElementById('panel').style.display='block';
+});
+
+function logout(){ currentAdmin=null; document.getElementById('adminInfo').innerText='未登录'; document.getElementById('loginSection').style.display='block'; document.getElementById('panel').style.display='none'; document.getElementById('result').innerHTML=''; }
+
+async function loadUsers(){
+  if(!currentAdmin) return alert('请先登录');
+  const res = await fetch(`api.php?action=admin_list_users&user_id=${currentAdmin.id}`);
+  const data = await res.json().catch(()=>null);
+  if(!Array.isArray(data)) return document.getElementById('result').innerText = JSON.stringify(data);
+
+  // Ensure users are ordered by numeric id (ascending) for consistent display
+  try{ data.sort((a,b)=> Number(a.id) - Number(b.id)); }catch(e){}
+
+  // Render all users (including admins) in a single table so you can see every registered account
+  let html = '';
+  html += `<div style="margin-bottom:12px"><strong>用户 (${data.length})</strong></div>`;
+  if(data.length === 0){
+    html += '<div style="color:var(--muted)">暂无用户</div>';
+  } else {
+    html += '<table class="table"><thead><tr><th>ID</th><th>用户名</th><th>邮箱</th><th>角色</th><th>状态</th><th>注册时间</th></tr></thead><tbody>';
+    data.forEach((u, idx)=>{
+      // display sequential row number starting from 1 (1,2,3...)
+      const idDisplay = idx + 1;
+      const nameDisplay = escapeHtml((u.username || '').toString().trim());
+      const emailDisplay = escapeHtml((u.email || '').toString().trim());
+      html += `<tr><td>${idDisplay}</td><td>${nameDisplay}</td><td>${emailDisplay}</td><td>${escapeHtml(u.role||'')}</td><td>${escapeHtml(u.status||'')}</td><td>${escapeHtml(u.created_at||'')}</td></tr>`;
+    });
+    html += '</tbody></table>';
+  }
+
+  document.getElementById('result').innerHTML = html;
+}
+
+async function loadOrders(){
+  if(!currentAdmin) return alert('请先登录');
+  const res = await fetch(`api.php?action=admin_list_orders&user_id=${currentAdmin.id}`);
+  const data = await res.json().catch(()=>null);
+  if(!Array.isArray(data)) return document.getElementById('result').innerText = JSON.stringify(data);
+  let html = '';
+  data.forEach(o=>{
+    html += `<div style="padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px"><div style="font-weight:700;color:var(--accent-2)">订单 #${o.id} — 买家: ${escapeHtml(o.buyer_username||'未知')} — ${o.created_at}</div><div style="margin-top:6px">收货: ${escapeHtml(o.recipient_name)} / ${escapeHtml(o.recipient_address)}</div>`;
+    if(o.items && Array.isArray(o.items)){
+      html += '<table class="table"><thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr></thead><tbody>';
+      o.items.forEach(it=>{ html += `<tr><td>${escapeHtml(it.name)}</td><td>RM ${parseFloat(it.price).toFixed(2)}</td><td>${it.quantity}</td><td>RM ${(parseFloat(it.price)*parseInt(it.quantity||0)).toFixed(2)}</td></tr>` });
+      html += '</tbody></table>';
+    }
+    html += '</div>';
+  });
+  document.getElementById('result').innerHTML = html;
+}
+
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>'"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+</script>
+</body>
+</html>

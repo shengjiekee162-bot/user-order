@@ -7,6 +7,20 @@ ini_set('error_log', __DIR__ . "/php_errors.log");
 
 ob_start(); // 开启输出缓冲
 require_once "db.php"; // 引入数据库连接
+// Determine which column holds the account identifier: prefer 'username', fall back to 'name', then 'email'
+$user_col = 'username';
+$colRes = $conn->query("SHOW COLUMNS FROM users LIKE 'username'");
+if (!($colRes && $colRes->num_rows > 0)) {
+    $colRes2 = $conn->query("SHOW COLUMNS FROM users LIKE 'name'");
+    if ($colRes2 && $colRes2->num_rows > 0) {
+        $user_col = 'name';
+    } else {
+        $colRes3 = $conn->query("SHOW COLUMNS FROM users LIKE 'email'");
+        if ($colRes3 && $colRes3->num_rows > 0) {
+            $user_col = 'email';
+        }
+    }
+}
 
 // ===================== 发邮件函数（支持 SMTP 和 mail()） =====================
 function send_mail($to, $subject, $body, $from_email = null, $from_name = null) {
@@ -112,8 +126,8 @@ if ($action === "register") {
         $conn->query("ALTER TABLE users ADD COLUMN email VARCHAR(255) DEFAULT NULL");
     }
 
-    // 查用户名是否重复
-    $stmt = $conn->prepare("SELECT id FROM users WHERE username=? LIMIT 1");
+    // 查用户名是否重复 (对不同的 schema 支持多种列名)
+    $stmt = $conn->prepare("SELECT id FROM users WHERE " . $user_col . "=? LIMIT 1");
     $stmt->bind_param("s", $u);
     $stmt->execute();
     if ($stmt->get_result()->num_rows > 0)
@@ -133,8 +147,8 @@ if ($action === "register") {
     $role = strtolower($role);
     $role = in_array($role, ["buyer","seller"]) ? $role : "buyer";
 
-    // 写入数据库
-    $stmt = $conn->prepare("INSERT INTO users(username,password,role,email) VALUES(?,?,?,?)");
+    // 写入数据库 (在不同 schema 中使用检测到的用户列名)
+    $stmt = $conn->prepare("INSERT INTO users(" . $user_col . ",password,role,email) VALUES(?,?,?,?)");
     $stmt->bind_param("ssss", $u, $hash, $role, $email);
     if (!$stmt->execute())
         json_out(["status"=>"fail","message"=>"注册失败：" . $conn->error]);
@@ -150,10 +164,14 @@ if ($action === "login") {
     if (!$u || !$pw) json_out(["status"=>"fail","message"=>"请输入用户名密码"]);
 
     // 从数据库查用户
-    $stmt = $conn->prepare("SELECT * FROM users WHERE username=? LIMIT 1");
+    $stmt = $conn->prepare("SELECT * FROM users WHERE " . $user_col . "=? LIMIT 1");
     $stmt->bind_param("s", $u);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
+    // 如果数据表中使用的是其他列名（如 name 或 email），确保返回结果中有 'username' 键
+    if ($user && $user_col !== 'username' && isset($user[$user_col])) {
+        $user['username'] = $user[$user_col];
+    }
 
     // 验证密码
     if ($user && password_verify($pw, $user["password"])) {
@@ -177,7 +195,7 @@ if ($action === "switch_role") {
     $stmt->execute();
 
     // 返回更新后的用户（去掉密码）
-    $stmt2 = $conn->prepare("SELECT id, username, role FROM users WHERE id=? LIMIT 1");
+    $stmt2 = $conn->prepare("SELECT id, " . $user_col . " AS username, role FROM users WHERE id=? LIMIT 1");
     $stmt2->bind_param("i", $user_id);
     $stmt2->execute();
     $user = $stmt2->get_result()->fetch_assoc();
@@ -194,7 +212,7 @@ if ($action === "request_password_reset") {
     if (!$email) json_out(["status"=>"fail","message"=>"缺少邮箱地址"]);
 
     // 查用户名
-    $stmt = $conn->prepare("SELECT id, email FROM users WHERE username=? LIMIT 1");
+    $stmt = $conn->prepare("SELECT id, email FROM users WHERE " . $user_col . "=? LIMIT 1");
     $stmt->bind_param("s", $u);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
@@ -243,7 +261,7 @@ if ($action === "reset_password") {
         json_out(["status"=>"fail","message"=>"缺少信息"]);
 
     // 查用户
-    $stmt = $conn->prepare("SELECT id FROM users WHERE username=? LIMIT 1");
+    $stmt = $conn->prepare("SELECT id FROM users WHERE " . $user_col . "=? LIMIT 1");
     $stmt->bind_param("s", $u);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
@@ -284,7 +302,7 @@ if ($action === "change_password") {
         json_out(["status"=>"fail","message"=>"新密码至少 6 位"]);
 
     // 查用户
-    $stmt = $conn->prepare("SELECT id, password FROM users WHERE username=? LIMIT 1");
+    $stmt = $conn->prepare("SELECT id, password FROM users WHERE " . $user_col . "=? LIMIT 1");
     $stmt->bind_param("s", $u);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();

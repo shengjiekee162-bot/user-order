@@ -1,0 +1,5 @@
+[21-Nov-2025 01:03:45 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'username' in 'where clause' in C:\xampp\htdocs\user order\auth.php:153
+Stack trace:
+#0 C:\xampp\htdocs\user order\auth.php(153): mysqli->prepare('SELECT * FROM u...')
+#1 {main}
+  thrown in C:\xampp\htdocs\user order\auth.php on line 153

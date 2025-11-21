@@ -66,9 +66,11 @@ document.getElementById("loginForm").onsubmit = async function(e){
       }
       localStorage.setItem("user", JSON.stringify(msg.user));
       alert("登录成功！");
-      // 根据角色跳转：seller -> seller.html, 其他 -> index.html
+      // 根据角色跳转：admin -> admin.html, seller -> seller.html, 其他 -> index.html
       const role = (msg.user && msg.user.role) || 'buyer';
-      if(role === 'seller') {
+      if(role === 'admin'){
+        window.location.href = 'admin.html';
+      } else if(role === 'seller') {
         window.location.href = 'seller.html';
       } else {
         window.location.href = 'index.html';

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>所有订单</title>
+  <style>
+    body{font-family:Inter,Arial,Helvetica,sans-serif;background:#07101a;color:#dfeffd;margin:20px}
+    .card{background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+    .order{padding:10px;border-radius:6px;background:rgba(255,255,255,0.01);margin-bottom:10px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:6px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+    th{color:#9fb6d9}
+  </style>
+</head>
+<body>
+  <h1>订单列表</h1>
+  <div class="card">
+    <div id="status">正在加载……</div>
+    <div id="orders"></div>
+  </div>
+
+  <script>
+    async function load() {
+      try{
+        const res = await fetch('scripts/debug_db.php');
+        const txt = await res.text();
+        const json = JSON.parse(txt);
+        if(!json || !json.ok){ document.getElementById('status').innerText = '读取失败: ' + (json && json.error ? json.error : 'unknown'); return; }
+        document.getElementById('status').innerText = `检测到 ${json.orders_count} 个订单`;
+        const orders = json.orders || [];
+        if(orders.length === 0){ document.getElementById('orders').innerHTML = '<div>没有订单记录。</div>'; return; }
+        let html = '';
+        orders.forEach(o=>{
+          html += `<div class="order"><div style="font-weight:700">订单 #${o.id} — 用户: ${o.user_id} — ${o.created_at}</div>`;
+          html += `<div>收件: ${escapeHtml(o.recipient_name||'')} / ${escapeHtml(o.recipient_address||'')}</div>`;
+          html += `<div>总价: RM ${parseFloat(o.total_price||0).toFixed(2)} — 支付: ${escapeHtml(o.payment_method||'')} / ${escapeHtml(o.payment_status||'')}</div>`;
+          html += `</div>`;
+        });
+        document.getElementById('orders').innerHTML = html;
+      }catch(e){ document.getElementById('status').innerText = '请求失败: '+e.message; }
+    }
+    function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>'"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    load();
+  </script>
+</body>
+</html>

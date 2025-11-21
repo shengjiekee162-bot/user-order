@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>所有用户</title>
+  <style>
+    body{font-family:Inter,Arial,Helvetica,sans-serif;background:#07101a;color:#dfeffd;margin:20px}
+    .card{background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+    th{color:#9fb6d9}
+  </style>
+</head>
+<body>
+  <h1>注册用户列表</h1>
+  <div class="card">
+    <div id="status">正在加载……</div>
+    <div id="users"></div>
+  </div>
+
+  <script>
+    async function load() {
+      try{
+        const res = await fetch('scripts/debug_db.php');
+        const txt = await res.text();
+        const json = JSON.parse(txt);
+        if(!json || !json.ok){ document.getElementById('status').innerText = '读取失败: ' + (json && json.error ? json.error : 'unknown'); return; }
+        document.getElementById('status').innerText = `检测到用户列: ${json.user_col}，共 ${json.users_count} 个用户`;
+        const users = json.users || [];
+        if(users.length === 0){ document.getElementById('users').innerHTML = '<div>没有用户记录。</div>'; return; }
+        let html = '<table><thead><tr><th>ID</th><th>用户名</th><th>邮箱</th><th>角色</th><th>状态</th><th>注册时间</th></tr></thead><tbody>';
+        users.forEach(u=>{
+          html += `<tr><td>${u.id}</td><td>${(u.username||'')}</td><td>${(u.email||'')}</td><td>${(u.role||'')}</td><td>${(u.status||'')}</td><td>${(u.created_at||'')}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('users').innerHTML = html;
+      }catch(e){ document.getElementById('status').innerText = '请求失败: '+e.message; }
+    }
+    load();
+  </script>
+</body>
+</html>
